@@ -4,6 +4,8 @@ github.com/go-x-pkg/bufpool v0.0.1 h1:Bz+eypL3Grng7Qi1I7x8mDoIGIWsdze2oEEB3kxmsJ
 github.com/go-x-pkg/bufpool v0.0.1/go.mod h1:F3wwkqomuJL/dbj6JEeTyvAQzJwMYf5QlTQOjCQhwcw=
 github.com/go-x-pkg/dumpctx v0.0.1 h1:tryvw6e6sNbOwIO8pcGnxk48c+vyfb21Smbyx4P8fk0=
 github.com/go-x-pkg/dumpctx v0.0.1/go.mod h1:MouI8/efPEeEu4oFppSTpuROQo60HejpvHL6vuokG8A=
+github.com/go-x-pkg/dumpctx v0.0.2 h1:rwcImwyf13xZcPZ8+5ypTB2MbLX0PB6nOqHX9Or+9r4=
+github.com/go-x-pkg/dumpctx v0.0.2/go.mod h1:MouI8/efPEeEu4oFppSTpuROQo60HejpvHL6vuokG8A=
 github.com/go-x-pkg/fnspath v0.0.1 h1:DoylqC2JKaW3w2b4Y+NVkZXuaKzK6PDoaQe+WX+wtIA=
 github.com/go-x-pkg/fnspath v0.0.1/go.mod h1:uP1J7fRsNkpX9ZYM89/cQJgKBknCIWGyncqMavvgrqk=
 github.com/go-x-pkg/log v0.0.2 h1:E/CyCbXXpOD6jddj9EapdQ70s5AHkhs2WnHDXb4zr4U=
