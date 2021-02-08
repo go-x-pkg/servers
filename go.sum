@@ -8,9 +8,14 @@ github.com/go-x-pkg/dumpctx v0.0.2 h1:rwcImwyf13xZcPZ8+5ypTB2MbLX0PB6nOqHX9Or+9r
 github.com/go-x-pkg/dumpctx v0.0.2/go.mod h1:MouI8/efPEeEu4oFppSTpuROQo60HejpvHL6vuokG8A=
 github.com/go-x-pkg/fnspath v0.0.1 h1:DoylqC2JKaW3w2b4Y+NVkZXuaKzK6PDoaQe+WX+wtIA=
 github.com/go-x-pkg/fnspath v0.0.1/go.mod h1:uP1J7fRsNkpX9ZYM89/cQJgKBknCIWGyncqMavvgrqk=
+github.com/go-x-pkg/isnil v0.0.1 h1:NXBQ2rH63cRb38Z4UKB9Je4tqfBPagZdRH8e4rrdOt4=
+github.com/go-x-pkg/isnil v0.0.1/go.mod h1:fwToRoJ5HB3K9WP14uTPfCgZuGuozPKr8qDG4KRdNe0=
 github.com/go-x-pkg/log v0.0.2 h1:E/CyCbXXpOD6jddj9EapdQ70s5AHkhs2WnHDXb4zr4U=
 github.com/go-x-pkg/log v0.0.2/go.mod h1:NrZhiuizQKoD8xSMD1/Sx7knYX2kwBt0IGbCgn7+W6o=
 github.com/go-x-pkg/log v0.0.3 h1:p2zx8dmizrclFXVpP9hlx66wR0C6nId83DRcy6mriuY=
 github.com/go-x-pkg/log v0.0.3/go.mod h1:NrZhiuizQKoD8xSMD1/Sx7knYX2kwBt0IGbCgn7+W6o=
 github.com/go-x-pkg/log v0.0.4 h1:/9NEOTvBsYbWHQQbBlZX3hz1D3ozjpc+GxWqjiQJnFQ=
 github.com/go-x-pkg/log v0.0.4/go.mod h1:NrZhiuizQKoD8xSMD1/Sx7knYX2kwBt0IGbCgn7+W6o=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
+gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=

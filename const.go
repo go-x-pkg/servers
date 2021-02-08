@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	DefaultUNIXSocketFileMode os.FileMode = 0666
+	defaultUNIXSocketFileMode os.FileMode = 0o666
 )
 
 var (
