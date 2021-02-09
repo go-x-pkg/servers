@@ -207,11 +207,11 @@ func (ss *Servers) SetPortToFirstINET(port int) {
 		setPort(port)
 }
 
-func (ss *Servers) Listen(fnArgs ...arg) (Servers, []error) {
+func (ss *Servers) Listen(fnArgs ...Arg) (Servers, []error) {
 	return ss.IntoIter().Listen(fnArgs...)
 }
 
-func (ss *Servers) ServeHTTP(handler http.Handler, fnArgs ...arg) (chan struct{}, chan error) {
+func (ss *Servers) ServeHTTP(handler http.Handler, fnArgs ...Arg) (chan struct{}, chan error) {
 	return ss.IntoIter().ServeHTTP(handler, fnArgs...)
 }
 

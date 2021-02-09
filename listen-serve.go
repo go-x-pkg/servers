@@ -20,7 +20,7 @@ type ServerListener struct {
 
 func (sl *ServerListener) Addr() string { return sl.Server.Addr() }
 
-func (it iterator) Listen(fnArgs ...arg) (ss Servers, errs []error) {
+func (it iterator) Listen(fnArgs ...Arg) (ss Servers, errs []error) {
 	cfg := args{}
 	cfg.defaultize()
 
@@ -102,7 +102,7 @@ func (it iterator) Listen(fnArgs ...arg) (ss Servers, errs []error) {
 	return ss, errs
 }
 
-func (it iterator) ServeHTTP(handler http.Handler, fnArgs ...arg) (chan struct{}, chan error) {
+func (it iterator) ServeHTTP(handler http.Handler, fnArgs ...Arg) (chan struct{}, chan error) {
 	it = it.FilterListener()
 
 	cfg := args{}
