@@ -3,6 +3,7 @@ package servers
 import (
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/go-x-pkg/dumpctx"
 )
@@ -210,3 +211,13 @@ func (ss *Servers) SetPortToFirstINET(port int) {
 		First().(*ServerINET).
 		setPort(port)
 }
+
+func (ss *Servers) Listen(fnArgs ...arg) (Servers, []error) {
+	return ss.IntoIter().Listen(fnArgs...)
+}
+
+func (ss *Servers) ServeHTTP(handler http.Handler, fnArgs ...arg) (chan struct{}, chan error) {
+	return ss.IntoIter().ServeHTTP(handler, fnArgs...)
+}
+
+func (ss *Servers) Close() []error { return ss.IntoIter().Close() }
