@@ -11,11 +11,6 @@ import (
 type (
 	iterCb   func(Server) bool
 	iterator func(iterCb) bool
-
-	// see https://doc.rust-lang.org/std/iter/trait.IntoIterator.html.
-	intoIterator interface {
-		IntoIter() iterator
-	}
 )
 
 func (it iterator) IntoIter() iterator { return it }
