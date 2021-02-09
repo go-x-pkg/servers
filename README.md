@@ -38,9 +38,9 @@ func main() {
     log.Fatalf("error unmarshal: %s", err)
   }
 
-  listeners, err := ss.IntoIter().Listen()
+  listeners, err := ss.Listen()
   if len(errs) != 0 {
-    listeners.IntoIter().Close()
+    listeners.Close()
 
     log.Fatalf("error listen: %#v", errs)
   }
