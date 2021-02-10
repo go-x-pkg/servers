@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-x-pkg/dumpctx"
+	"google.golang.org/grpc"
 )
 
 type (
@@ -49,10 +50,12 @@ func (it iterator) Filter(take func(Server) bool) iterator {
 func takeUnix(s Server) bool { return s.Kind().Has(KindUNIX) }
 func takeInet(s Server) bool { return s.Kind().Has(KindINET) }
 func takeHTTP(s Server) bool { return s.Kind().Has(KindHTTP) }
+func takeGRPC(s Server) bool { return s.Kind().Has(KindGRPC) }
 
 func (it iterator) FilterUnix() iterator { return it.Filter(takeUnix) }
 func (it iterator) FilterInet() iterator { return it.Filter(takeInet) }
 func (it iterator) FilterHTTP() iterator { return it.Filter(takeHTTP) }
+func (it iterator) FilterGRPC() iterator { return it.Filter(takeGRPC) }
 func (it iterator) FilterListener() iterator {
 	return it.Filter(func(s Server) bool {
 		_, ok := s.(*ServerListener)
@@ -124,6 +127,7 @@ func (it iterator) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 				ctx.EmitPrefix(w)
 
 				fmt.Fprintf(w, "kind: %s\n", s.Kind())
+				fmt.Fprintf(w, "network: %s\n", s.Network())
 
 				ctx.Enter()
 				defer ctx.Leave()
@@ -211,8 +215,20 @@ func (ss *Servers) Listen(fnArgs ...Arg) (Servers, []error) {
 	return ss.IntoIter().Listen(fnArgs...)
 }
 
-func (ss *Servers) ServeHTTP(handler http.Handler, fnArgs ...Arg) (chan struct{}, chan error) {
-	return ss.IntoIter().ServeHTTP(handler, fnArgs...)
+func (ss *Servers) ServeHTTP(handler http.Handler, fnArgs ...Arg) error {
+	return ss.
+		IntoIter().
+		FilterHTTP().
+		FilterListener().
+		ServeHTTP(handler, fnArgs...)
+}
+
+func (ss *Servers) ServeGRPC(fnOnServer func(*grpc.Server), fnArgs ...Arg) error {
+	return ss.
+		IntoIter().
+		FilterGRPC().
+		FilterListener().
+		ServeGRPC(fnOnServer, fnArgs...)
 }
 
 func (ss *Servers) Close() []error { return ss.IntoIter().Close() }

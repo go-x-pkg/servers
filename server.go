@@ -9,11 +9,13 @@ import (
 type Server interface {
 	serverKinder
 	serverAddred
+	serverNetworker
 }
 
 type (
-	serverKinder interface{ Kind() Kind }
-	serverAddred interface{ Addr() string }
+	serverKinder    interface{ Kind() Kind }
+	serverAddred    interface{ Addr() string }
+	serverNetworker interface{ Network() string }
 
 	serverValidator interface{ validate() error }
 

@@ -15,11 +15,16 @@ type ServerINET struct {
 
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
-	TLS  struct {
+
+	TLS struct {
 		Enable   bool   `yaml:"enable"`
 		CertFile string `yaml:"cert-file"`
 		KeyFile  string `yaml:"key-file"`
 	} `yaml:"tls"`
+
+	GRPC struct {
+		Reflection bool `yaml:"reflection"`
+	} `yaml:"grpc"`
 }
 
 func (s *ServerINET) setPort(v int) { s.Port = v }
@@ -29,6 +34,10 @@ func (s *ServerINET) Addr() string {
 }
 
 func (s *ServerINET) validate() error {
+	if err := s.ServerBase.validate(); err != nil {
+		return err
+	}
+
 	if s.TLS.Enable {
 		if v := s.TLS.CertFile; v != "" {
 			if exists, err := fnspath.IsExists(v); err != nil {
@@ -60,12 +69,16 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	if s.TLS.Enable {
 		fmt.Fprintf(w, "%stls:\n", ctx.Indent())
 
-		ctx.Enter()
-
-		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.TLS.Enable)
-		fmt.Fprintf(w, "%scert-file: %s\n", ctx.Indent(), s.TLS.CertFile)
-		fmt.Fprintf(w, "%skey-file: %s\n", ctx.Indent(), s.TLS.KeyFile)
-
-		ctx.Leave()
+		ctx.Wrap(func() {
+			fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.TLS.Enable)
+			fmt.Fprintf(w, "%scert-file: %s\n", ctx.Indent(), s.TLS.CertFile)
+			fmt.Fprintf(w, "%skey-file: %s\n", ctx.Indent(), s.TLS.KeyFile)
+		})
 	}
+
+	fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
+
+	ctx.Wrap(func() {
+		fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
+	})
 }

@@ -20,6 +20,10 @@ type ServerUNIX struct {
 func (s *ServerUNIX) Addr() string { return s.Address }
 
 func (s *ServerUNIX) validate() error {
+	if err := s.ServerBase.validate(); err != nil {
+		return err
+	}
+
 	if v := s.Addr(); v != "" {
 		dir := filepath.Dir(v)
 		if exists, err := fnspath.IsExists(dir); err != nil {
@@ -35,6 +39,10 @@ func (s *ServerUNIX) validate() error {
 }
 
 func (s *ServerUNIX) defaultize() error {
+	if err := s.ServerBase.defaultize(); err != nil {
+		return err
+	}
+
 	if s.SocketFileMode == 0 {
 		s.SocketFileMode = defaultUNIXSocketFileMode | os.ModeSocket
 	}

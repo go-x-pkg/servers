@@ -13,4 +13,6 @@ var (
 
 	ErrUnixSocketParentDirNotExists = errors.New("unix socket parent dir doesn't exists")
 	ErrUnixSocketPathNotProvided    = errors.New("tls key-file path is not provided")
+
+	ErrGotBothInetAndUnix = errors.New("provided server is both unix and inet")
 )

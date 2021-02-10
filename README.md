@@ -15,10 +15,13 @@ package main
 
 import (
   "bytes"
+  "context"
   "fmt"
   "http"
   "log"
+  "sync"
 
+  "google.golang.org/grpc"
   "github.com/go-x-pkg/servers"
 )
 
@@ -30,9 +33,16 @@ func main() {
 - kind: inet
   host: 0.0.0.0
   port: 8000
-- kind: inet
+- kind: [inet, grpc]
   host: 0.0.0.0
-  port: 8443`
+  port: 8443
+  tls:
+    enable: true
+    cert-file: /etc/acme/tls.cert
+    key-file: /etc/acme/tls.key
+  grpc:
+    # e.g. grpcurl
+    reflection: true`
 
   if err := yaml.Unmarshal([]byte(config), &ss); err != nil {
     log.Fatalf("error unmarshal: %s", err)
@@ -49,17 +59,60 @@ func main() {
     log.Printf("[<] %#v %#v", w, r)
   })
 
-  done, errs := listeners.IntoIter().FilterHTTP().ServeHTTP(
-    http.DefaultServerMux,
-    servers.Context(context.Background()),
-  )
+  ctx := context.Background()
+  ctx, cancel := context.WithCancel(ctx)
+  defer cancel()
 
-  select {
-  case <-done:
-  case err := <-errsChan:
-    log.Printf("error listen: %#v", errs)
-  }
+  wg := sync.WaitGroup()
+
+  wg.Add(1)
+  go func() {
+    defer wg.Done()
+
+    err := listeners.ServeHTTP(
+      http.DefaultServerMux,
+
+      servers.Context(ctx),
+    )
+  }()
+
+  wg.Add(1)
+  go func() {
+    defer wg.Done()
+
+    err := listeners.ServeGRPC(
+      func (*grpc.Server) {
+        # register gRPC servers here
+      },
+
+      servers.Context(ctx),
+    )
+  }()
+
+  wg.Wait()
 }
+```
+
+## Config example
+
+```yaml
+- kind: [unix, http]
+  addr: /run/acme/acme.sock
+
+- kind: inet
+  host: 0.0.0.0
+  port: 8000
+
+- kind: [inet, grpc]
+  host: 0.0.0.0
+  port: 8443
+  tls:
+    enable: true
+    cert-file: /etc/acme/tls.cert
+    key-file: /etc/acme/tls.key
+  grpc:
+    # e.g. grpcurl
+    reflection: true
 ```
 
 [godev-image]: https://img.shields.io/badge/go.dev-reference-5272B4?logo=go&logoColor=white
