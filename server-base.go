@@ -14,6 +14,10 @@ func (wk *WithKind) validate() error {
 }
 
 func (wk *WithKind) defaultize() error {
+	if !wk.Knd.Has(KindINET) && !wk.Knd.Has(KindUNIX) {
+		wk.Knd.Set(KindINET)
+	}
+
 	if !wk.Knd.Has(KindHTTP) && !wk.Knd.Has(KindGRPC) {
 		wk.Knd.Set(KindHTTP)
 	}

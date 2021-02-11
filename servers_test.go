@@ -14,6 +14,9 @@ func TestServers(t *testing.T) {
 	tests := []struct {
 		raw string
 	}{
+		{`- host: 0.0.0.0
+  port: 8000`},
+
 		{`- kind: inet
   host: 0.0.0.0
   port: 8000`},
