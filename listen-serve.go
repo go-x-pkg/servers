@@ -219,7 +219,7 @@ func (it iterator) ServeHTTP(handler http.Handler, fnArgs ...Arg) error {
 	}
 }
 
-func (it iterator) ServeGRPC(fnOnServer func(*grpc.Server), fnArgs ...Arg) error {
+func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
 	it = it.FilterListener()
 
 	cfg := args{}
@@ -283,13 +283,11 @@ func (it iterator) ServeGRPC(fnOnServer func(*grpc.Server), fnArgs ...Arg) error
 				opts = append(opts, opt)
 			}
 
-			server := grpc.NewServer(opts...)
+			server := fnNewServer(opts...)
 
 			if inet.GRPC.Reflection {
 				reflection.Register(server)
 			}
-
-			fnOnServer(server)
 
 			go func() {
 				<-ctx.Done()

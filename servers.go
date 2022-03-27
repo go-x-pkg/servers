@@ -223,12 +223,12 @@ func (ss *Servers) ServeHTTP(handler http.Handler, fnArgs ...Arg) error {
 		ServeHTTP(handler, fnArgs...)
 }
 
-func (ss *Servers) ServeGRPC(fnOnServer func(*grpc.Server), fnArgs ...Arg) error {
+func (ss *Servers) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
 	return ss.
 		IntoIter().
 		FilterGRPC().
 		FilterListener().
-		ServeGRPC(fnOnServer, fnArgs...)
+		ServeGRPC(fnNewServer, fnArgs...)
 }
 
 func (ss *Servers) Close() []error { return ss.IntoIter().Close() }
