@@ -127,10 +127,11 @@ func (it iterator) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 				ctx.EmitPrefix(w)
 
 				fmt.Fprintf(w, "kind: %s\n", s.Kind())
-				fmt.Fprintf(w, "network: %s\n", s.Network())
 
 				ctx.Enter()
 				defer ctx.Leave()
+
+				fmt.Fprintf(w, "%snetwork: %s\n", ctx.Indent(), s.Network())
 
 				if dumper, ok := s.(serverDumper); ok {
 					dumper.Dump(ctx, w)
