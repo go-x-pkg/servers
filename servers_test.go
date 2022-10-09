@@ -43,6 +43,8 @@ func TestServers(t *testing.T) {
 - kind: inet
   host: 0.0.0.0
   port: 8443
+  http:
+    readHeaderTimeout: 10s
   tls:
     enable: false
     certFile: "/etc/acme/tls.cert"
