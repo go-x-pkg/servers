@@ -151,6 +151,9 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 			server := &http.Server{
 				Addr:    addr,
 				Handler: fnNewHandler(s),
+
+				// see: Potential slowloris attack GO-S2112
+				ReadHeaderTimeout: s.Base().HTTP.ReadHeaderTimeout,
 			}
 
 			go func() {

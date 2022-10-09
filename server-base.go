@@ -3,6 +3,7 @@ package servers
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/go-x-pkg/dumpctx"
 )
@@ -44,6 +45,10 @@ type ServerBase struct {
 		Reflection bool `yaml:"reflection"`
 	} `yaml:"grpc"`
 
+	HTTP struct {
+		ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
+	} `yaml:"http"`
+
 	Pprof struct {
 		Enable bool   `yaml:"enable"`
 		Prefix string `yaml:"prefix"`
@@ -75,18 +80,25 @@ func (s *ServerBase) defaultize() error {
 		s.Pprof.Prefix = defaultPprofPrefix
 	}
 
+	if s.HTTP.ReadHeaderTimeout == 0 {
+		s.HTTP.ReadHeaderTimeout = defaultReadHeaderTimeout
+	}
+
 	return nil
 }
 
 func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
-
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
 	})
 
-	fmt.Fprintf(w, "%spprof:\n", ctx.Indent())
+	fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
+	ctx.Wrap(func() {
+		fmt.Fprintf(w, "%sreadHeaderTimeout: %s\n", ctx.Indent(), s.HTTP.ReadHeaderTimeout)
+	})
 
+	fmt.Fprintf(w, "%spprof:\n", ctx.Indent())
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.Pprof.Enable)
 		fmt.Fprintf(w, "%sprefix: %q\n", ctx.Indent(), s.Pprof.Prefix)
