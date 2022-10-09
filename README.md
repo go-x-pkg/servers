@@ -118,8 +118,8 @@ func main() {
 [godev-image]: https://img.shields.io/badge/go.dev-reference-5272B4?logo=go&logoColor=white
 [godev-url]: https://pkg.go.dev/github.com/go-x-pkg/servers
 
-[build-image]: https://travis-ci.com/go-x-pkg/servers.svg?branch=master
-[build-url]: https://travis-ci.com/go-x-pkg/servers
+[build-image]: https://app.travis-ci.com/go-x-pkg/servers.svg?branch=master
+[build-url]: https://app.travis-ci.com/github/go-x-pkg/servers
 
 [coverage-image]: https://coveralls.io/repos/github/go-x-pkg/servers/badge.svg?branch=master
 [coverage-url]: https://coveralls.io/github/go-x-pkg/servers?branch=master
