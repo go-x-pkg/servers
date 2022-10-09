@@ -14,8 +14,10 @@ type ServerUNIX struct {
 	ServerBase `json:",inline" yaml:",inline" bson:",inline"`
 
 	Address        string      `yaml:"addr"`
-	SocketFileMode os.FileMode `yaml:"socket-file-mode"`
+	SocketFileMode os.FileMode `yaml:"socketFileMode"`
 }
+
+func (s *ServerUNIX) Base() *ServerBase { return &s.ServerBase }
 
 func (s *ServerUNIX) Addr() string { return s.Address }
 
@@ -52,5 +54,7 @@ func (s *ServerUNIX) defaultize() error {
 
 func (s *ServerUNIX) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%saddr: %s\n", ctx.Indent(), s.Addr())
-	fmt.Fprintf(w, "%ssocket-file-mode: %03o | %s\n", ctx.Indent(), s.SocketFileMode, s.SocketFileMode)
+	fmt.Fprintf(w, "%ssocketFileMode: %03o | %s\n", ctx.Indent(), s.SocketFileMode, s.SocketFileMode)
+
+	s.ServerBase.Dump(ctx, w)
 }

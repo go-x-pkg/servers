@@ -9,6 +9,9 @@ import (
 
 const (
 	defaultUNIXSocketFileMode os.FileMode = 0o666
+
+	// defaultPprofPrefix url prefix of pprof.
+	defaultPprofPrefix = "/debug/pprof"
 )
 
 var (

@@ -31,7 +31,7 @@ var kindText = map[Kind]string{
 	KindGRPC: "gRPC",
 }
 
-// is power of two algorithm
+// IsSingle is power of two algorithm.
 func (knd Kind) IsSingle() bool {
 	return !knd.IsEmpty() && (knd&(knd-1) == 0)
 }
@@ -45,7 +45,9 @@ func (knd Kind) String() string {
 	if knd.IsEmpty() {
 		return "~"
 	}
+
 	s, _ := knd.MarshalJSON()
+
 	return string(s)
 }
 
@@ -100,12 +102,15 @@ func (knd Kind) ToStringSlice() (vv []string) {
 	if knd.Has(KindINET) {
 		vv = append(vv, kindText[KindINET])
 	}
+
 	if knd.Has(KindUNIX) {
 		vv = append(vv, kindText[KindUNIX])
 	}
+
 	if knd.Has(KindHTTP) {
 		vv = append(vv, kindText[KindHTTP])
 	}
+
 	if knd.Has(KindGRPC) {
 		vv = append(vv, kindText[KindGRPC])
 	}

@@ -7,12 +7,14 @@ import (
 )
 
 type Server interface {
+	serverBaser
 	serverKinder
 	serverAddred
 	serverNetworker
 }
 
 type (
+	serverBaser     interface{ Base() *ServerBase }
 	serverKinder    interface{ Kind() Kind }
 	serverAddred    interface{ Addr() string }
 	serverNetworker interface{ Network() string }
@@ -24,18 +26,17 @@ type (
 	serverDumper interface{ Dump(*dumpctx.Ctx, io.Writer) }
 )
 
-func runLogPrefix(s Server) string {
-	if s.Kind().IsEmpty() {
-		return "!!!"
-	} else if s.Kind().Has(KindUNIX) {
+func runLogPrefix(server Server) string {
+	switch s := server.(type) {
+	case *ServerUNIX:
 		return "UNIX"
-	} else if s.Kind().Has(KindINET) {
-		if inet, ok := s.(*ServerINET); ok && inet.TLS.Enable {
+	case *ServerINET:
+		if s.TLS.Enable {
 			return "TLS"
 		}
 
 		return "TCP"
+	default:
+		panic("undefined server")
 	}
-
-	return "???"
 }

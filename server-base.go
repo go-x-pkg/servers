@@ -1,5 +1,12 @@
 package servers
 
+import (
+	"fmt"
+	"io"
+
+	"github.com/go-x-pkg/dumpctx"
+)
+
 type WithKind struct {
 	Knd Kind `json:"kind" yaml:"kind" bson:"kind"`
 }
@@ -32,6 +39,15 @@ type WithNetwork struct {
 type ServerBase struct {
 	WithKind    `json:",inline" yaml:",inline" bson:",inline"`
 	WithNetwork `json:",inline" yaml:",inline" bson:",inline"`
+
+	GRPC struct {
+		Reflection bool `yaml:"reflection"`
+	} `yaml:"grpc"`
+
+	Pprof struct {
+		Enable bool   `yaml:"enable"`
+		Prefix string `yaml:"prefix"`
+	} `yaml:"pprof"`
 }
 
 func (s *ServerBase) Network() string {
@@ -51,5 +67,28 @@ func (s *ServerBase) validate() error {
 }
 
 func (s *ServerBase) defaultize() error {
-	return s.WithKind.defaultize()
+	if err := s.WithKind.defaultize(); err != nil {
+		return err
+	}
+
+	if s.Pprof.Prefix == "" {
+		s.Pprof.Prefix = defaultPprofPrefix
+	}
+
+	return nil
+}
+
+func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
+	fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
+
+	ctx.Wrap(func() {
+		fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
+	})
+
+	fmt.Fprintf(w, "%spprof:\n", ctx.Indent())
+
+	ctx.Wrap(func() {
+		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.Pprof.Enable)
+		fmt.Fprintf(w, "%sprefix: %q\n", ctx.Indent(), s.Pprof.Prefix)
+	})
 }

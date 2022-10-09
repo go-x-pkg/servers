@@ -107,7 +107,7 @@ func (it iterator) Listen(fnArgs ...Arg) (ss Servers, errs []error) {
 	return ss, errs
 }
 
-func (it iterator) ServeHTTP(handler http.Handler, fnArgs ...Arg) error {
+func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...Arg) error {
 	it = it.FilterListener()
 
 	cfg := args{}
@@ -150,7 +150,7 @@ func (it iterator) ServeHTTP(handler http.Handler, fnArgs ...Arg) error {
 
 			server := &http.Server{
 				Addr:    addr,
-				Handler: handler,
+				Handler: fnNewHandler(s),
 			}
 
 			go func() {
@@ -161,6 +161,7 @@ func (it iterator) ServeHTTP(handler http.Handler, fnArgs ...Arg) error {
 
 				if err := server.Shutdown(ctxTimeout); err != nil {
 					fnLog(log.Info, "server (:addr %s) shutdown failed: %s", addr, err)
+
 					return
 				}
 

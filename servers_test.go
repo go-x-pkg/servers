@@ -26,8 +26,8 @@ func TestServers(t *testing.T) {
   port: 8443
   tls:
     enable: false
-    cert-file: "/etc/acme/tls.cert"
-    key-file: "/etc/acme/tls.key"`},
+    certFile: "/etc/acme/tls.cert"
+    keyFile: "/etc/acme/tls.key"`},
 
 		{`- kind: unix
   addr: /run/acme/acme.sock`},
@@ -45,8 +45,16 @@ func TestServers(t *testing.T) {
   port: 8443
   tls:
     enable: false
-    cert-file: "/etc/acme/tls.cert"
-    key-file: "/etc/acme/tls.key"`},
+    certFile: "/etc/acme/tls.cert"
+    keyFile: "/etc/acme/tls.key"`},
+
+		{`- kind: [inet, grpc]
+  host: 0.0.0.0
+  port: 8000
+  tls:
+    enable: false
+    certFile: "/etc/acme/tls.cert"
+    keyFile: "/etc/acme/tls.key"`},
 
 		{`- kind: unix
 - kind: inet`},
@@ -79,8 +87,8 @@ func TestServers(t *testing.T) {
 			}
 
 			ss.SetPortToFirstINET(9000)
-			ss.PushINETIfNotExists("10.1.1.2", 9001)
-			ss.PushUnixIfNotExists("/run/bar/buz.sock")
+			ss.PushINETIfNotExists("10.1.1.2", 9001, servers.KindGRPC)
+			ss.PushUnixIfNotExists("/run/bar/buz.sock", servers.KindHTTP)
 		}()
 	}
 }
