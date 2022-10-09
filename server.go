@@ -28,6 +28,13 @@ type (
 
 func runLogPrefix(server Server) string {
 	switch s := server.(type) {
+	case *ServerListener:
+		server = s.Server
+	case *ServerWrapped:
+		server = s.Server
+	}
+
+	switch s := server.(type) {
 	case *ServerUNIX:
 		return "UNIX"
 	case *ServerINET:

@@ -7,7 +7,7 @@ import (
 	"github.com/go-x-pkg/isnil"
 )
 
-// Struct wrapped typed server.
+// ServerWrapped is struct wrapped typed server.
 // Server + kind to unmarshal and build typed json/yaml/bson.
 // see https://stackoverflow.com/a/35584188/723095.
 type ServerWrapped struct {

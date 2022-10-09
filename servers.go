@@ -174,6 +174,7 @@ func (ss *Servers) PushINETIfNotExists(host string, port int, kind Kind) {
 	var server ServerINET
 
 	server.Knd = KindINET
+	server.Knd.Set(kind)
 	server.Host = host
 	server.Port = port
 
@@ -189,6 +190,7 @@ func (ss *Servers) PushUnixIfNotExists(addr string, kind Kind) {
 
 	server.Knd = KindUNIX
 	server.Knd.Set(kind)
+	server.Address = addr
 
 	*ss = append(*ss, serverEnsureWrapped(&server))
 }
