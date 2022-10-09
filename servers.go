@@ -97,7 +97,6 @@ func (it iterator) Defaultize(inetHost string, inetPort int, unixAddr string) (e
 		if inet.Port == 0 {
 			inet.Port = inetPort
 		}
-
 	}
 
 	return err
@@ -167,41 +166,31 @@ func (ss Servers) Dump(ctx *dumpctx.Ctx, w io.Writer) { ss.IntoIter().Dump(ctx, 
 
 func (ss Servers) Validate() error { return ss.IntoIter().Validate() }
 
-func (ss *Servers) PushINETIfNotExists(host string, port int) {
+func (ss *Servers) PushINETIfNotExists(host string, port int, kind Kind) {
 	if ss.IntoIter().FilterInet().Len() != 0 {
 		return
 	}
 
-	s := &ServerINET{
-		ServerBase: ServerBase{
-			WithKind: WithKind{
-				Knd: KindINET,
-			},
-		},
+	var server ServerINET
 
-		Host: host,
-		Port: port,
-	}
+	server.Knd = KindINET
+	server.Host = host
+	server.Port = port
 
-	*ss = append(*ss, serverEnsureWrapped(s))
+	*ss = append(*ss, serverEnsureWrapped(&server))
 }
 
-func (ss *Servers) PushUnixIfNotExists(addr string) {
+func (ss *Servers) PushUnixIfNotExists(addr string, kind Kind) {
 	if ss.IntoIter().FilterUnix().Len() != 0 {
 		return
 	}
 
-	s := &ServerUNIX{
-		ServerBase: ServerBase{
-			WithKind: WithKind{
-				Knd: KindUNIX,
-			},
-		},
+	var server ServerUNIX
 
-		Address: addr,
-	}
+	server.Knd = KindUNIX
+	server.Knd.Set(kind)
 
-	*ss = append(*ss, serverEnsureWrapped(s))
+	*ss = append(*ss, serverEnsureWrapped(&server))
 }
 
 func (ss *Servers) SetPortToFirstINET(port int) {
@@ -216,12 +205,12 @@ func (ss *Servers) Listen(fnArgs ...Arg) (Servers, []error) {
 	return ss.IntoIter().Listen(fnArgs...)
 }
 
-func (ss *Servers) ServeHTTP(handler http.Handler, fnArgs ...Arg) error {
+func (ss *Servers) ServeHTTP(fnNewServer func(Server) http.Handler, fnArgs ...Arg) error {
 	return ss.
 		IntoIter().
 		FilterHTTP().
 		FilterListener().
-		ServeHTTP(handler, fnArgs...)
+		ServeHTTP(fnNewServer, fnArgs...)
 }
 
 func (ss *Servers) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {

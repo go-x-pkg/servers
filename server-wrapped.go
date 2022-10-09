@@ -15,7 +15,7 @@ type ServerWrapped struct {
 }
 
 func (sw *ServerWrapped) unmarshal(fn func(interface{}) error) error {
-	wk := WithKind{}
+	var wk WithKind
 
 	if err := fn(&wk); err != nil {
 		return fmt.Errorf("error unmarshal server-head-kind: %w", err)
