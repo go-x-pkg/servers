@@ -61,7 +61,11 @@ func (s *ServerINET) validate() error {
 	return nil
 }
 
-func (s *ServerINET) Interpolate(interpolateFn func(string) string) {
+func (s *ServerINET) interpolate(interpolateFn func(string) string) {
+	if interpolateFn == nil {
+		return
+	}
+
 	s.TLS.CertFile = interpolateFn(s.TLS.CertFile)
 	s.TLS.KeyFile = interpolateFn(s.TLS.KeyFile)
 }
