@@ -102,6 +102,16 @@ func (it iterator) Defaultize(inetHost string, inetPort int, unixAddr string) (e
 	return err
 }
 
+func (it iterator) Interpolate(interpolateFn func(string) string) {
+	it(func(s Server) bool {
+		if interpolator, ok := s.(serverInterpolator); ok {
+			interpolator.interpolate(interpolateFn)
+		}
+
+		return true
+	})
+}
+
 func (it iterator) Validate() (err error) {
 	it(func(s Server) bool {
 		if validator, ok := s.(serverValidator); ok {
@@ -165,6 +175,10 @@ func (ss Servers) Defaultize(inetHost string, inetPort int, unixAddr string) (er
 func (ss Servers) Dump(ctx *dumpctx.Ctx, w io.Writer) { ss.IntoIter().Dump(ctx, w) }
 
 func (ss Servers) Validate() error { return ss.IntoIter().Validate() }
+
+func (ss Servers) Interpolate(interpolateFn func(string) string) {
+	ss.IntoIter().Interpolate(interpolateFn)
+}
 
 func (ss *Servers) PushINETIfNotExists(host string, port int, kind Kind) {
 	if ss.IntoIter().FilterInet().Len() != 0 {
