@@ -61,6 +61,11 @@ func (s *ServerINET) validate() error {
 	return nil
 }
 
+func (s *ServerINET) Interpolate(interpolateFn func(string) string) {
+	s.TLS.CertFile = interpolateFn(s.TLS.CertFile)
+	s.TLS.KeyFile = interpolateFn(s.TLS.KeyFile)
+}
+
 func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%shost: %s\n", ctx.Indent(), s.Host)
 	fmt.Fprintf(w, "%sport: %d\n", ctx.Indent(), s.Port)

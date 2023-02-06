@@ -21,6 +21,8 @@ type (
 
 	serverValidator interface{ validate() error }
 
+	serverInterpolator interface{ interpolate(func(string) string) }
+
 	serverDefaultizer interface{ defaultize() error }
 
 	serverDumper interface{ Dump(*dumpctx.Ctx, io.Writer) }
