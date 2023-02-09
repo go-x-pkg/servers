@@ -45,6 +45,11 @@ type ServerBase struct {
 		Reflection bool `yaml:"reflection"`
 	} `yaml:"grpc"`
 
+	ClientAuthTLS struct {
+		Enable          bool   `json:"enable" yaml:"enable" bson:"enable"`
+		ClientTrustedCA string `json:"clientTrustedCA" yaml:"clientTrustedCA" bson:"clientTrustedCA"`
+	} `yaml:"clientAuthTLS"`
+
 	HTTP struct {
 		ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
 	} `yaml:"http"`
