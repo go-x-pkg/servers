@@ -1,9 +1,12 @@
 package servers
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strconv"
 
 	"github.com/go-x-pkg/dumpctx"
@@ -17,10 +20,17 @@ type ServerINET struct {
 	Port int    `yaml:"port"`
 
 	TLS struct {
-		Enable   bool   `yaml:"enable"`
-		CertFile string `yaml:"certFile"`
-		KeyFile  string `yaml:"keyFile"`
+		Enable                   bool       `yaml:"enable"`
+		CertFile                 string     `yaml:"certFile"`
+		KeyFile                  string     `yaml:"keyFile"`
+		MinVersion               versionTLS `yaml:"minVersion"`
+		MaxVersion               versionTLS `yaml:"maxVersion"`
+		PreferServerCipherSuites *bool      `yaml:"preferServerCipherSuites"`
 	} `yaml:"tls"`
+
+	ClientAuth struct {
+		TLS ClientAuthTLSConfig `yaml:"mtls"`
+	} `yaml:"clientAuth"`
 }
 
 func (s *ServerINET) Base() *ServerBase { return &s.ServerBase }
@@ -31,12 +41,68 @@ func (s *ServerINET) Addr() string {
 	return net.JoinHostPort(s.Host, strconv.Itoa(s.Port))
 }
 
+func (s *ServerINET) ClientAuthTLS() *ClientAuthTLSConfig {
+	return &s.ClientAuth.TLS
+}
+
+func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
+	if !s.TLS.Enable && !s.ClientAuth.TLS.Enable {
+		return nil, nil
+	}
+
+	tlsConfig := &tls.Config{
+		MinVersion:               uint16(s.TLS.MinVersion.setedOrDefault()),
+		MaxVersion:               uint16(s.TLS.MaxVersion.setedOrDefault()),
+		PreferServerCipherSuites: *s.TLS.PreferServerCipherSuites,
+	}
+
+	if s.TLS.Enable {
+		cert, err := tls.LoadX509KeyPair(s.TLS.CertFile, s.TLS.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("error load x509 key pair (:cert %q :key %q): %w",
+				s.TLS.CertFile, s.TLS.KeyFile, err)
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	if s.ClientAuth.TLS.Enable {
+		tlsConfig.ClientAuth = tls.ClientAuthType(
+			s.ClientAuth.TLS.AuthType.setedOrDefault())
+
+		if s.ClientAuth.TLS.TrustedCA != "" {
+			if caCertPool, err := loadCACertPool(
+				s.ClientAuth.TLS.TrustedCA); err != nil {
+				return nil, err
+			} else {
+				tlsConfig.ClientCAs = caCertPool
+			}
+		}
+	}
+	return tlsConfig, nil
+}
+
+func (s *ServerINET) interpolate(interpolateFn func(string) string) {
+	if interpolateFn == nil {
+		return
+	}
+
+	s.TLS.CertFile = interpolateFn(s.TLS.CertFile)
+	s.TLS.KeyFile = interpolateFn(s.TLS.KeyFile)
+	s.ClientAuth.TLS.TrustedCA = interpolateFn(s.ClientAuth.TLS.TrustedCA)
+}
+
 func (s *ServerINET) validate() error {
 	if err := s.ServerBase.validate(); err != nil {
 		return err
 	}
 
 	if s.TLS.Enable {
+		if s.TLS.PreferServerCipherSuites == nil {
+			p := true
+			s.TLS.PreferServerCipherSuites = &p
+		}
+
 		if v := s.TLS.CertFile; v != "" {
 			if exists, err := fnspath.IsExists(v); err != nil {
 				return fmt.Errorf("tls cert-file existence check failed: %w", err)
@@ -61,28 +127,50 @@ func (s *ServerINET) validate() error {
 	return nil
 }
 
-func (s *ServerINET) interpolate(interpolateFn func(string) string) {
-	if interpolateFn == nil {
-		return
-	}
-
-	s.TLS.CertFile = interpolateFn(s.TLS.CertFile)
-	s.TLS.KeyFile = interpolateFn(s.TLS.KeyFile)
-}
-
 func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%shost: %s\n", ctx.Indent(), s.Host)
 	fmt.Fprintf(w, "%sport: %d\n", ctx.Indent(), s.Port)
 
 	if s.TLS.Enable {
 		fmt.Fprintf(w, "%stls:\n", ctx.Indent())
-
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.TLS.Enable)
 			fmt.Fprintf(w, "%scertFile: %s\n", ctx.Indent(), s.TLS.CertFile)
 			fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
+			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion.SetedOrDefault())
+			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion.SetedOrDefault())
+			fmt.Fprintf(w, "%spreferServerCipherSuites: %t\n", ctx.Indent(), *s.TLS.PreferServerCipherSuites)
+
+			if !*s.TLS.PreferServerCipherSuites {
+				fmt.Fprintf(w, "%sWARNING: preferServerCipherSuites is false. %s\n",
+					ctx.Indent(), "Set to true for avoid potentinal security risk!")
+			}
+		})
+	}
+
+	if s.ClientAuth.TLS.Enable {
+		fmt.Fprintf(w, "%sclientAuth:\n", ctx.Indent())
+		ctx.Wrap(func() {
+			if s.ClientAuth.TLS.Enable {
+				s.ClientAuth.TLS.dump(ctx, w)
+			}
 		})
 	}
 
 	s.ServerBase.Dump(ctx, w)
+}
+
+func loadCACertPool(caCertPath string) (*x509.CertPool, error) {
+	caCert, err := os.ReadFile(caCertPath)
+	if err != nil {
+		return nil, fmt.Errorf("error read TrustedCA (:cert %q): %w",
+			caCertPath, err)
+	}
+
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+		return nil, fmt.Errorf("error load TrustedCA (:cert %q)",
+			caCertPath)
+	}
+	return caCertPool, nil
 }

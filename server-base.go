@@ -88,15 +88,19 @@ func (s *ServerBase) defaultize() error {
 }
 
 func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
-	fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
-	ctx.Wrap(func() {
-		fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
-	})
+	if s.Kind().Has(KindGRPC) {
+		fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
+		ctx.Wrap(func() {
+			fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
+		})
+	}
 
-	fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
-	ctx.Wrap(func() {
-		fmt.Fprintf(w, "%sreadHeaderTimeout: %s\n", ctx.Indent(), s.HTTP.ReadHeaderTimeout)
-	})
+	if s.Kind().Has(KindHTTP) {
+		fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
+		ctx.Wrap(func() {
+			fmt.Fprintf(w, "%sreadHeaderTimeout: %s\n", ctx.Indent(), s.HTTP.ReadHeaderTimeout)
+		})
+	}
 
 	fmt.Fprintf(w, "%spprof:\n", ctx.Indent())
 	ctx.Wrap(func() {

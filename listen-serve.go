@@ -178,14 +178,24 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 			} else {
 				inet := l.Server.(*ServerINET)
 
-				if inet.TLS.Enable {
-					if err := server.ServeTLS(l.Listener, inet.TLS.CertFile, inet.TLS.KeyFile); err != nil {
-						fnOnErr(fmt.Errorf("starting https (%s) server failed: %w", addr, err))
+				tlsConfig, err := inet.newTLSConfig()
+
+				if err != nil {
+					fnOnErr(err)
+					return
+				}
+
+				if tlsConfig != nil {
+					l.Listener = tls.NewListener(l.Listener, tlsConfig)
+					server.TLSConfig = tlsConfig
+				}
+
+				if err := server.Serve(l.Listener); err != nil {
+					serverType := "http"
+					if inet.TLS.Enable {
+						serverType = "https"
 					}
-				} else {
-					if err := server.Serve(l.Listener); err != nil {
-						fnOnErr(fmt.Errorf("starting http (%s) server failed: %w", addr, err))
-					}
+					fnOnErr(fmt.Errorf("starting %s (%s) server failed: %w", serverType, addr, err))
 				}
 			}
 		}(l)
@@ -223,7 +233,7 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 	}
 }
 
-func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
+func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
 	it = it.FilterListener()
 
 	cfg := args{}
@@ -268,26 +278,18 @@ func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.S
 
 			fnLog(log.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
 
-			if inet.TLS.Enable {
-				cert, err := tls.LoadX509KeyPair(inet.TLS.CertFile, inet.TLS.KeyFile)
-				if err != nil {
-					fnOnErr(fmt.Errorf("error load x509 key pair (:cert %q :key %q): %w",
-						inet.TLS.CertFile, inet.TLS.KeyFile, err))
-					return
-				}
+			tlsConfig, err := inet.newTLSConfig()
+			if err != nil {
+				fnOnErr(err)
+				return
+			}
 
-				tlsConfig := &tls.Config{
-					Certificates: make([]tls.Certificate, 1),
-				}
-
-				tlsConfig.Certificates[0] = cert
-
+			if tlsConfig != nil {
 				opt := grpc.Creds(credentials.NewTLS(tlsConfig))
-
 				opts = append(opts, opt)
 			}
 
-			server := fnNewServer(opts...)
+			server := fnNewServer(s, opts...)
 
 			if inet.GRPC.Reflection {
 				reflection.Register(server)
