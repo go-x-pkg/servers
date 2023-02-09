@@ -270,7 +270,7 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 			fnLog(log.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
 
 			tlsConfig := &tls.Config{
-				Certificates: make([]tls.Certificate, 1),
+				MinVersion: tls.VersionTLS13,
 			}
 
 			if inet.TLS.Enable {
@@ -281,30 +281,34 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 					return
 				}
 
-				tlsConfig.Certificates[0] = cert
-
-				opt := grpc.Creds(credentials.NewTLS(tlsConfig))
-
-				opts = append(opts, opt)
+				tlsConfig.Certificates = []tls.Certificate{cert}
 			}
 
 			if inet.ClientAuthTLS.Enable {
-				caCert, err := os.ReadFile(inet.ClientAuthTLS.ClientTrustedCA)
-				if err != nil {
-					fnOnErr(fmt.Errorf("error read ClientTrustedCA (:cert %q): %w",
-						inet.ClientAuthTLS.ClientTrustedCA, err))
-					return
-				}
+				tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 
-				caCertPool := x509.NewCertPool()
-				if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-					fnOnErr(fmt.Errorf("error load ClientTrustedCA (:cert %q): %w",
-						inet.ClientAuthTLS.ClientTrustedCA, err))
-					return
-				}
+				if inet.ClientAuthTLS.ClientTrustedCA != "" {
+					caCert, err := os.ReadFile(inet.ClientAuthTLS.ClientTrustedCA)
+					if err != nil {
+						fnOnErr(fmt.Errorf("error read ClientTrustedCA (:cert %q): %w",
+							inet.ClientAuthTLS.ClientTrustedCA, err))
+						return
+					}
 
-				tlsConfig.RootCAs = caCertPool
-				tlsConfig.InsecureSkipVerify = false
+					caCertPool := x509.NewCertPool()
+					if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+						fnOnErr(fmt.Errorf("error load ClientTrustedCA (:cert %q): %w",
+							inet.ClientAuthTLS.ClientTrustedCA, err))
+						return
+					}
+
+					tlsConfig.ClientCAs = caCertPool
+				}
+			}
+
+			if inet.TLS.Enable || inet.ClientAuthTLS.Enable {
+				opt := grpc.Creds(credentials.NewTLS(tlsConfig))
+				opts = append(opts, opt)
 			}
 
 			server := fnNewServer(s, opts...)
