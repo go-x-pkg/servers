@@ -3,6 +3,7 @@ package servers
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -223,7 +224,7 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 	}
 }
 
-func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
+func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
 	it = it.FilterListener()
 
 	cfg := args{}
@@ -268,16 +269,16 @@ func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.S
 
 			fnLog(log.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
 
+			tlsConfig := &tls.Config{
+				Certificates: make([]tls.Certificate, 1),
+			}
+
 			if inet.TLS.Enable {
 				cert, err := tls.LoadX509KeyPair(inet.TLS.CertFile, inet.TLS.KeyFile)
 				if err != nil {
 					fnOnErr(fmt.Errorf("error load x509 key pair (:cert %q :key %q): %w",
 						inet.TLS.CertFile, inet.TLS.KeyFile, err))
 					return
-				}
-
-				tlsConfig := &tls.Config{
-					Certificates: make([]tls.Certificate, 1),
 				}
 
 				tlsConfig.Certificates[0] = cert
@@ -287,7 +288,26 @@ func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.S
 				opts = append(opts, opt)
 			}
 
-			server := fnNewServer(opts...)
+			if inet.ClientAuthTLS.Enable {
+				caCert, err := os.ReadFile(inet.ClientAuthTLS.ClientTrustedCA)
+				if err != nil {
+					fnOnErr(fmt.Errorf("error read ClientTrustedCA (:cert %q): %w",
+						inet.ClientAuthTLS.ClientTrustedCA, err))
+					return
+				}
+
+				caCertPool := x509.NewCertPool()
+				if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+					fnOnErr(fmt.Errorf("error load ClientTrustedCA (:cert %q): %w",
+						inet.ClientAuthTLS.ClientTrustedCA, err))
+					return
+				}
+
+				tlsConfig.RootCAs = caCertPool
+				tlsConfig.InsecureSkipVerify = false
+			}
+
+			server := fnNewServer(s, opts...)
 
 			if inet.GRPC.Reflection {
 				reflection.Register(server)
