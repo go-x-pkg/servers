@@ -3,6 +3,7 @@ package servers
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -223,7 +224,7 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 	}
 }
 
-func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
+func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
 	it = it.FilterListener()
 
 	cfg := args{}
@@ -268,6 +269,10 @@ func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.S
 
 			fnLog(log.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
 
+			tlsConfig := &tls.Config{
+				MinVersion: tls.VersionTLS13,
+			}
+
 			if inet.TLS.Enable {
 				cert, err := tls.LoadX509KeyPair(inet.TLS.CertFile, inet.TLS.KeyFile)
 				if err != nil {
@@ -276,18 +281,37 @@ func (it iterator) ServeGRPC(fnNewServer func(opts ...grpc.ServerOption) *grpc.S
 					return
 				}
 
-				tlsConfig := &tls.Config{
-					Certificates: make([]tls.Certificate, 1),
+				tlsConfig.Certificates = []tls.Certificate{cert}
+			}
+
+			if inet.ClientAuthTLS.Enable {
+				tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+
+				if inet.ClientAuthTLS.ClientTrustedCA != "" {
+					caCert, err := os.ReadFile(inet.ClientAuthTLS.ClientTrustedCA)
+					if err != nil {
+						fnOnErr(fmt.Errorf("error read ClientTrustedCA (:cert %q): %w",
+							inet.ClientAuthTLS.ClientTrustedCA, err))
+						return
+					}
+
+					caCertPool := x509.NewCertPool()
+					if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+						fnOnErr(fmt.Errorf("error load ClientTrustedCA (:cert %q): %w",
+							inet.ClientAuthTLS.ClientTrustedCA, err))
+						return
+					}
+
+					tlsConfig.ClientCAs = caCertPool
 				}
+			}
 
-				tlsConfig.Certificates[0] = cert
-
+			if inet.TLS.Enable || inet.ClientAuthTLS.Enable {
 				opt := grpc.Creds(credentials.NewTLS(tlsConfig))
-
 				opts = append(opts, opt)
 			}
 
-			server := fnNewServer(opts...)
+			server := fnNewServer(s, opts...)
 
 			if inet.GRPC.Reflection {
 				reflection.Register(server)
