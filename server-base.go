@@ -98,6 +98,12 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 		fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
 	})
 
+	fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
+	ctx.Wrap(func() {
+		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.ClientAuthTLS.Enable)
+		fmt.Fprintf(w, "%sclientTrustedCA: %q\n", ctx.Indent(), s.ClientAuthTLS.ClientTrustedCA)
+	})
+
 	fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%sreadHeaderTimeout: %s\n", ctx.Indent(), s.HTTP.ReadHeaderTimeout)
