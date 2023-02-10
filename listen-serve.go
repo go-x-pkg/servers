@@ -284,21 +284,21 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 				tlsConfig.Certificates = []tls.Certificate{cert}
 			}
 
-			if inet.ClientAuthTLS.Enable {
+			if inet.GRPC.ClientAuthTLS {
 				tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
 
-				if inet.ClientAuthTLS.ClientTrustedCA != "" {
-					caCert, err := os.ReadFile(inet.ClientAuthTLS.ClientTrustedCA)
+				if inet.GRPC.ClientTrustedCA != "" {
+					caCert, err := os.ReadFile(inet.GRPC.ClientTrustedCA)
 					if err != nil {
 						fnOnErr(fmt.Errorf("error read ClientTrustedCA (:cert %q): %w",
-							inet.ClientAuthTLS.ClientTrustedCA, err))
+							inet.GRPC.ClientTrustedCA, err))
 						return
 					}
 
 					caCertPool := x509.NewCertPool()
 					if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
 						fnOnErr(fmt.Errorf("error load ClientTrustedCA (:cert %q): %w",
-							inet.ClientAuthTLS.ClientTrustedCA, err))
+							inet.GRPC.ClientTrustedCA, err))
 						return
 					}
 
@@ -306,7 +306,7 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 				}
 			}
 
-			if inet.TLS.Enable || inet.ClientAuthTLS.Enable {
+			if inet.TLS.Enable || inet.GRPC.ClientAuthTLS {
 				opt := grpc.Creds(credentials.NewTLS(tlsConfig))
 				opts = append(opts, opt)
 			}

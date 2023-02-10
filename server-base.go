@@ -43,12 +43,10 @@ type ServerBase struct {
 
 	GRPC struct {
 		Reflection bool `yaml:"reflection"`
-	} `yaml:"grpc"`
 
-	ClientAuthTLS struct {
-		Enable          bool   `json:"enable" yaml:"enable" bson:"enable"`
+		ClientAuthTLS   bool   `json:"enable" yaml:"enable" bson:"enable"`
 		ClientTrustedCA string `json:"clientTrustedCA" yaml:"clientTrustedCA" bson:"clientTrustedCA"`
-	} `yaml:"clientAuthTLS"`
+	} `yaml:"grpc"`
 
 	HTTP struct {
 		ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
@@ -96,12 +94,11 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
-	})
-
-	fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
-	ctx.Wrap(func() {
-		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.ClientAuthTLS.Enable)
-		fmt.Fprintf(w, "%sclientTrustedCA: %q\n", ctx.Indent(), s.ClientAuthTLS.ClientTrustedCA)
+		fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
+		ctx.Wrap(func() {
+			fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.GRPC.ClientAuthTLS)
+			fmt.Fprintf(w, "%sclientTrustedCA: %s\n", ctx.Indent(), s.GRPC.ClientTrustedCA)
+		})
 	})
 
 	fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
