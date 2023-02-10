@@ -44,7 +44,7 @@ type ServerBase struct {
 	GRPC struct {
 		Reflection bool `yaml:"reflection"`
 
-		ClientAuthTLS   bool   `json:"enable" yaml:"enable" bson:"enable"`
+		ClientAuthTLS   bool   `json:"clientAuthTLS" yaml:"clientAuthTLS" bson:"clientAuthTLS"`
 		ClientTrustedCA string `json:"clientTrustedCA" yaml:"clientTrustedCA" bson:"clientTrustedCA"`
 	} `yaml:"grpc"`
 
