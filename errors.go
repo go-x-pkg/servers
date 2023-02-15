@@ -11,6 +11,8 @@ var (
 	ErrTLSKeyFileNotExists       = errors.New("tls key-file doesn't exists")
 	ErrTLSKeyFilePathNotProvided = errors.New("tls key-file path is not provided")
 
+	ErrClientAuthTLSAuthType = errors.New("unexpected clientAuthType")
+
 	ErrUnixSocketParentDirNotExists = errors.New("unix socket parent dir doesn't exists")
 	ErrUnixSocketPathNotProvided    = errors.New("tls key-file path is not provided")
 

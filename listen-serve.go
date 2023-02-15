@@ -3,7 +3,6 @@ package servers
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -179,14 +178,28 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 			} else {
 				inet := l.Server.(*ServerINET)
 
-				if inet.TLS.Enable {
-					if err := server.ServeTLS(l.Listener, inet.TLS.CertFile, inet.TLS.KeyFile); err != nil {
-						fnOnErr(fmt.Errorf("starting https (%s) server failed: %w", addr, err))
-					}
-				} else {
-					if err := server.Serve(l.Listener); err != nil {
-						fnOnErr(fmt.Errorf("starting http (%s) server failed: %w", addr, err))
-					}
+				tlsConfig, err := inet.newConfigTLS()
+
+				if err != nil {
+					fnOnErr(err)
+					return
+				}
+
+				if tlsConfig != nil {
+					l.Listener = tls.NewListener(l.Listener, tlsConfig)
+				}
+
+				// if inet.TLS.Enable {
+				// 	if err := server.ServeTLS(l.Listener, inet.TLS.CertFile, inet.TLS.KeyFile); err != nil {
+				// 		fnOnErr(fmt.Errorf("starting https (%s) server failed: %w", addr, err))
+				// 	}
+				// } else {
+				// 	if err := server.Serve(l.Listener); err != nil {
+				// 		fnOnErr(fmt.Errorf("starting http (%s) server failed: %w", addr, err))
+				// 	}
+				// }
+				if err := server.Serve(l.Listener); err != nil {
+					fnOnErr(fmt.Errorf("starting http (%s) server failed: %w", addr, err))
 				}
 			}
 		}(l)
@@ -269,44 +282,13 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 
 			fnLog(log.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
 
-			tlsConfig := &tls.Config{
-				MinVersion: tls.VersionTLS13,
+			tlsConfig, err := inet.newConfigTLS()
+			if err != nil {
+				fnOnErr(err)
+				return
 			}
 
-			if inet.TLS.Enable {
-				cert, err := tls.LoadX509KeyPair(inet.TLS.CertFile, inet.TLS.KeyFile)
-				if err != nil {
-					fnOnErr(fmt.Errorf("error load x509 key pair (:cert %q :key %q): %w",
-						inet.TLS.CertFile, inet.TLS.KeyFile, err))
-					return
-				}
-
-				tlsConfig.Certificates = []tls.Certificate{cert}
-			}
-
-			if inet.GRPC.ClientAuthTLS {
-				tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
-
-				if inet.GRPC.ClientTrustedCA != "" {
-					caCert, err := os.ReadFile(inet.GRPC.ClientTrustedCA)
-					if err != nil {
-						fnOnErr(fmt.Errorf("error read ClientTrustedCA (:cert %q): %w",
-							inet.GRPC.ClientTrustedCA, err))
-						return
-					}
-
-					caCertPool := x509.NewCertPool()
-					if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-						fnOnErr(fmt.Errorf("error load ClientTrustedCA (:cert %q): %w",
-							inet.GRPC.ClientTrustedCA, err))
-						return
-					}
-
-					tlsConfig.ClientCAs = caCertPool
-				}
-			}
-
-			if inet.TLS.Enable || inet.GRPC.ClientAuthTLS {
+			if tlsConfig != nil {
 				opt := grpc.Creds(credentials.NewTLS(tlsConfig))
 				opts = append(opts, opt)
 			}
