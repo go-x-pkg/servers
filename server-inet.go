@@ -56,7 +56,7 @@ func (s *ServerINET) newConfigTLS() (*tls.Config, error) {
 
 	tlsConfig := &tls.Config{
 		MinVersion:               s.getMinVersionTLS(),
-		PreferServerCipherSuites: s.TLS.PreferServerCipherSuites,
+		PreferServerCipherSuites: s.TLS.PreferServerCipherSuites, // nolint GSC-G402
 	}
 
 	if s.TLS.Enable {
