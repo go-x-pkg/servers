@@ -146,6 +146,11 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 			fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
 			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion)
 			fmt.Fprintf(w, "%sPreferServerCipherSuites: %t\n", ctx.Indent(), s.TLS.PreferServerCipherSuites)
+
+			if !s.TLS.PreferServerCipherSuites {
+				fmt.Fprintf(w, "%sWARNING: PreferServerCipherSuites is false. %s\n",
+					ctx.Indent(), "Set to true for avoid potentinal security risk!")
+			}
 		})
 	}
 
