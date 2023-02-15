@@ -55,9 +55,8 @@ func (s *ServerINET) newConfigTLS() (*tls.Config, error) {
 	}
 
 	tlsConfig := &tls.Config{
-		MinVersion: s.getMinVersionTLS(),
-		MaxVersion: 0,
-		//nolint:gosec
+		MinVersion:               s.getMinVersionTLS(),
+		MaxVersion:               0,
 		PreferServerCipherSuites: s.TLS.PreferServerCipherSuites,
 	}
 
