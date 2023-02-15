@@ -90,6 +90,15 @@ func (c *ClientAuthCfgTLS) getClientAuthType() tls.ClientAuthType {
 	}
 }
 
+func (c *ClientAuthCfgTLS) dump(ctx *dumpctx.Ctx, w io.Writer) {
+	ctx.Wrap(func() {
+		fmt.Fprintf(w, "%sclientAuthTLS: %t\n", ctx.Indent(), c.ClientAuthTLS)
+		fmt.Fprintf(w, "%sclientAuthType: %s\n", ctx.Indent(), c.ClientAuthType)
+		fmt.Fprintf(w, "%sclientTrustedCA: %s\n", ctx.Indent(), c.ClientTrustedCA)
+		fmt.Fprintf(w, "%sclientsCommonNames: %s\n", ctx.Indent(), c.ClientsCommonNames)
+	})
+}
+
 type ServerBase struct {
 	WithKind    `json:",inline" yaml:",inline" bson:",inline"`
 	WithNetwork `json:",inline" yaml:",inline" bson:",inline"`
@@ -158,10 +167,7 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 		fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
-			fmt.Fprintf(w, "%sclientAuthTLS: %t\n", ctx.Indent(), s.GRPC.ClientAuthTLS)
-			fmt.Fprintf(w, "%sclientAuthType: %s\n", ctx.Indent(), s.GRPC.ClientAuthType)
-			fmt.Fprintf(w, "%sclientTrustedCA: %s\n", ctx.Indent(), s.GRPC.ClientTrustedCA)
-			fmt.Fprintf(w, "%sclientsCommonNames: %s\n", ctx.Indent(), s.GRPC.ClientsCommonNames)
+			s.getClientAuthConfig().dump(ctx, w)
 		})
 	}
 
@@ -169,10 +175,7 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 		fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%sreadHeaderTimeout: %s\n", ctx.Indent(), s.HTTP.ReadHeaderTimeout)
-			fmt.Fprintf(w, "%sclientAuthTLS: %t\n", ctx.Indent(), s.HTTP.ClientAuthTLS)
-			fmt.Fprintf(w, "%sclientAuthType: %s\n", ctx.Indent(), s.HTTP.ClientAuthType)
-			fmt.Fprintf(w, "%sclientTrustedCA: %s\n", ctx.Indent(), s.HTTP.ClientTrustedCA)
-			fmt.Fprintf(w, "%sclientsCommonNames: %s\n", ctx.Indent(), s.HTTP.ClientsCommonNames)
+			s.getClientAuthConfig().dump(ctx, w)
 		})
 	}
 
