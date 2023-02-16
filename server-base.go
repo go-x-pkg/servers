@@ -95,7 +95,7 @@ func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
 		ctx.Wrap(func() {
-			fmt.Fprintf(w, "%enable: %t\n", ctx.Indent(), c.Enable)
+			fmt.Fprintf(w, "%snable: %t\n", ctx.Indent(), c.Enable)
 			fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType)
 			fmt.Fprintf(w, "%strustedCA: %s\n", ctx.Indent(), c.TrustedCA)
 			fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
