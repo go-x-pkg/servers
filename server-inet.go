@@ -25,7 +25,7 @@ type ServerINET struct {
 		KeyFile                  string     `yaml:"keyFile"`
 		MinVersion               versionTLS `yaml:"minVersion"`
 		MaxVersion               versionTLS `yaml:"maxVersion"`
-		PreferServerCipherSuites bool       `yaml:"preferServerCipherSuites"`
+		PreferServerCipherSuites *bool      `yaml:"preferServerCipherSuites"`
 	} `yaml:"tls"`
 }
 
@@ -45,7 +45,7 @@ func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		MinVersion:               uint16(s.TLS.MinVersion),
 		MaxVersion:               uint16(s.TLS.MaxVersion),
-		PreferServerCipherSuites: s.TLS.PreferServerCipherSuites,
+		PreferServerCipherSuites: *s.TLS.PreferServerCipherSuites,
 	}
 
 	if s.TLS.Enable {
@@ -109,6 +109,11 @@ func (s *ServerINET) validate() error {
 		} else {
 			return ErrTLSKeyFilePathNotProvided
 		}
+
+		if s.TLS.PreferServerCipherSuites == nil {
+			p := true
+			s.TLS.PreferServerCipherSuites = &p
+		}
 	}
 
 	return nil
@@ -127,9 +132,9 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 			fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
 			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion)
 			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion)
-			fmt.Fprintf(w, "%sPreferServerCipherSuites: %t\n", ctx.Indent(), s.TLS.PreferServerCipherSuites)
+			fmt.Fprintf(w, "%sPreferServerCipherSuites: %t\n", ctx.Indent(), *s.TLS.PreferServerCipherSuites)
 
-			if !s.TLS.PreferServerCipherSuites {
+			if !*s.TLS.PreferServerCipherSuites {
 				fmt.Fprintf(w, "%sWARNING: PreferServerCipherSuites is false. %s\n",
 					ctx.Indent(), "Set to true for avoid potentinal security risk!")
 			}
