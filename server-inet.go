@@ -50,7 +50,7 @@ func (s *ServerINET) getMinVersionTLS() uint16 {
 }
 
 func (s *ServerINET) newConfigTLS() (*tls.Config, error) {
-	if !s.TLS.Enable && !s.getClientAuthConfig().Enable {
+	if !s.TLS.Enable && !s.getClientAuthTLS().Enable {
 		return nil, nil
 	}
 
@@ -70,12 +70,12 @@ func (s *ServerINET) newConfigTLS() (*tls.Config, error) {
 		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
-	if s.getClientAuthConfig().Enable {
-		tlsConfig.ClientAuth = s.getClientAuthConfig().getAuthType()
+	if s.getClientAuthTLS().Enable {
+		tlsConfig.ClientAuth = s.getClientAuthTLS().getAuthType()
 
-		if s.getClientAuthConfig().TrustedCA != "" {
+		if s.getClientAuthTLS().TrustedCA != "" {
 			if caCertPool, err := loadCACertPool(
-				s.getClientAuthConfig().TrustedCA); err != nil {
+				s.getClientAuthTLS().TrustedCA); err != nil {
 				return nil, err
 			} else {
 				tlsConfig.ClientCAs = caCertPool
@@ -92,8 +92,8 @@ func (s *ServerINET) interpolate(interpolateFn func(string) string) {
 
 	s.TLS.CertFile = interpolateFn(s.TLS.CertFile)
 	s.TLS.KeyFile = interpolateFn(s.TLS.KeyFile)
-	s.getClientAuthConfig().TrustedCA = interpolateFn(
-		s.getClientAuthConfig().TrustedCA)
+	s.getClientAuthTLS().TrustedCA = interpolateFn(
+		s.getClientAuthTLS().TrustedCA)
 }
 
 func (s *ServerINET) validate() error {

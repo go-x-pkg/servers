@@ -190,15 +190,6 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 					server.TLSConfig = tlsConfig
 				}
 
-				// if inet.TLS.Enable {
-				// 	if err := server.ServeTLS(l.Listener, inet.TLS.CertFile, inet.TLS.KeyFile); err != nil {
-				// 		fnOnErr(fmt.Errorf("starting https (%s) server failed: %w", addr, err))
-				// 	}
-				// } else {
-				// 	if err := server.Serve(l.Listener); err != nil {
-				// 		fnOnErr(fmt.Errorf("starting http (%s) server failed: %w", addr, err))
-				// 	}
-				// }
 				if err := server.Serve(l.Listener); err != nil {
 					serverType := "http"
 					if inet.TLS.Enable {

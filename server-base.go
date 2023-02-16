@@ -92,14 +92,12 @@ func (c *ClientAuthTLSConfig) getAuthType() tls.ClientAuthType {
 }
 
 func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
+	fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
 	ctx.Wrap(func() {
-		fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
-		ctx.Wrap(func() {
-			fmt.Fprintf(w, "%snable: %t\n", ctx.Indent(), c.Enable)
-			fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType)
-			fmt.Fprintf(w, "%strustedCA: %s\n", ctx.Indent(), c.TrustedCA)
-			fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
-		})
+		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), c.Enable)
+		fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType)
+		fmt.Fprintf(w, "%strustedCA: %s\n", ctx.Indent(), c.TrustedCA)
+		fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
 	})
 }
 
@@ -135,7 +133,7 @@ func (s *ServerBase) Network() string {
 	return "tcp"
 }
 
-func (s *ServerBase) getClientAuthConfig() *ClientAuthTLSConfig {
+func (s *ServerBase) getClientAuthTLS() *ClientAuthTLSConfig {
 	if s.Knd.Has(KindGRPC) {
 		return &s.GRPC.ClientAuthTLS
 	}
@@ -143,9 +141,11 @@ func (s *ServerBase) getClientAuthConfig() *ClientAuthTLSConfig {
 }
 
 func (s *ServerBase) validate() error {
-	if s.getClientAuthConfig().getAuthType().String() !=
-		s.getClientAuthConfig().AuthType {
-		return ErrClientAuthTLSAuthType
+	if s.getClientAuthTLS().AuthType != "" {
+		if s.getClientAuthTLS().getAuthType().String() !=
+			s.getClientAuthTLS().AuthType {
+			return ErrClientAuthTLSAuthType
+		}
 	}
 	return s.WithKind.validate()
 }
@@ -171,7 +171,7 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 		fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
-			s.getClientAuthConfig().dump(ctx, w)
+			s.getClientAuthTLS().dump(ctx, w)
 		})
 	}
 
@@ -179,7 +179,7 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 		fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%sreadHeaderTimeout: %s\n", ctx.Indent(), s.HTTP.ReadHeaderTimeout)
-			s.getClientAuthConfig().dump(ctx, w)
+			s.getClientAuthTLS().dump(ctx, w)
 		})
 	}
 
