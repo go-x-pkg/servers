@@ -67,7 +67,7 @@ type ClientAuthTLSConfig struct {
 	//
 	// If ClientAuthTLS is set true, AuthType must be set.
 	AuthType string `json:"authType" yaml:"authType" bson:"authType"`
-	// CARoot certificate for clients certificates
+	// CARoot certificate for clients certificates. Optional.
 	TrustedCA string `json:"trustedCA" yaml:"trustedCA" bson:"trustedCA"`
 	// If set, server will verifie Common Name of certificate given by client has in this list.
 	// Otherwise server return Unauthtorized responce.
