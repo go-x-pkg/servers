@@ -1,7 +1,6 @@
 package servers
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io"
 	"time"
@@ -66,29 +65,12 @@ type ClientAuthTLSConfig struct {
 	// to be sent by the client.
 	//
 	// If ClientAuthTLS is set true, AuthType must be set.
-	AuthType string `json:"authType" yaml:"authType" bson:"authType"`
+	AuthType clientAuthTypeTLS `json:"authType" yaml:"authType" bson:"authType"`
 	// CARoot certificate for clients certificates. Optional.
 	TrustedCA string `json:"trustedCA" yaml:"trustedCA" bson:"trustedCA"`
 	// If set, server will verifie Common Name of certificate given by client has in this list.
 	// Otherwise server return Unauthtorized responce.
 	ClientCommonNames []string `json:"clientCommonNames" yaml:"clientCommonNames" bson:"clientCommonNames"`
-}
-
-func (c *ClientAuthTLSConfig) getAuthType() tls.ClientAuthType {
-	switch c.AuthType {
-	case "NoClientCert":
-		return tls.NoClientCert
-	case "RequestClientCert":
-		return tls.RequestClientCert
-	case "RequireAnyClientCert":
-		return tls.RequireAnyClientCert
-	case "VerifyClientCertIfGiven":
-		return tls.VerifyClientCertIfGiven
-	case "RequireAndVerifyClientCert":
-		return tls.RequireAndVerifyClientCert
-	default:
-		return tls.NoClientCert
-	}
 }
 
 func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
@@ -141,12 +123,6 @@ func (s *ServerBase) getClientAuthTLS() *ClientAuthTLSConfig {
 }
 
 func (s *ServerBase) validate() error {
-	if s.getClientAuthTLS().AuthType != "" {
-		if s.getClientAuthTLS().getAuthType().String() !=
-			s.getClientAuthTLS().AuthType {
-			return ErrClientAuthTLSAuthType
-		}
-	}
 	return s.WithKind.validate()
 }
 

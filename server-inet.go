@@ -20,11 +20,12 @@ type ServerINET struct {
 	Port int    `yaml:"port"`
 
 	TLS struct {
-		Enable                   bool   `yaml:"enable"`
-		CertFile                 string `yaml:"certFile"`
-		KeyFile                  string `yaml:"keyFile"`
-		MinVersion               string `yaml:"minVersion"`
-		PreferServerCipherSuites bool   `yaml:"preferServerCipherSuites"`
+		Enable                   bool       `yaml:"enable"`
+		CertFile                 string     `yaml:"certFile"`
+		KeyFile                  string     `yaml:"keyFile"`
+		MinVersion               versionTLS `yaml:"minVersion"`
+		MaxVersion               versionTLS `yaml:"maxVersion"`
+		PreferServerCipherSuites bool       `yaml:"preferServerCipherSuites"`
 	} `yaml:"tls"`
 }
 
@@ -36,27 +37,14 @@ func (s *ServerINET) Addr() string {
 	return net.JoinHostPort(s.Host, strconv.Itoa(s.Port))
 }
 
-func (s *ServerINET) getMinVersionTLS() uint16 {
-	switch s.TLS.MinVersion {
-	case "VersionTLS10":
-		return tls.VersionTLS10
-	case "VersionTLS11":
-		return tls.VersionTLS11
-	case "VersionTLS12":
-		return tls.VersionTLS12
-	default:
-		return tls.VersionTLS13
-	}
-}
-
-func (s *ServerINET) newConfigTLS() (*tls.Config, error) {
+func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
 	if !s.TLS.Enable && !s.getClientAuthTLS().Enable {
 		return nil, nil
 	}
 
 	tlsConfig := &tls.Config{
-		MinVersion:               s.getMinVersionTLS(),
-		MaxVersion:               0,
+		MinVersion:               uint16(s.TLS.MinVersion),
+		MaxVersion:               uint16(s.TLS.MaxVersion),
 		PreferServerCipherSuites: s.TLS.PreferServerCipherSuites,
 	}
 
@@ -71,7 +59,7 @@ func (s *ServerINET) newConfigTLS() (*tls.Config, error) {
 	}
 
 	if s.getClientAuthTLS().Enable {
-		tlsConfig.ClientAuth = s.getClientAuthTLS().getAuthType()
+		tlsConfig.ClientAuth = tls.ClientAuthType(s.getClientAuthTLS().AuthType)
 
 		if s.getClientAuthTLS().TrustedCA != "" {
 			if caCertPool, err := loadCACertPool(
@@ -121,13 +109,6 @@ func (s *ServerINET) validate() error {
 		} else {
 			return ErrTLSKeyFilePathNotProvided
 		}
-
-		if s.getMinVersionTLS() == tls.VersionTLS13 &&
-			s.TLS.MinVersion != "VersionTLS13" && s.TLS.MinVersion != "" {
-			return fmt.Errorf(
-				"error (:unexpected tls minVersion %q), expected %q",
-				s.TLS.MinVersion, "VersionTLS1(0|1|2|3)")
-		}
 	}
 
 	return nil
@@ -145,6 +126,7 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 			fmt.Fprintf(w, "%scertFile: %s\n", ctx.Indent(), s.TLS.CertFile)
 			fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
 			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion)
+			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion)
 			fmt.Fprintf(w, "%sPreferServerCipherSuites: %t\n", ctx.Indent(), s.TLS.PreferServerCipherSuites)
 
 			if !s.TLS.PreferServerCipherSuites {

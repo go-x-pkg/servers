@@ -178,7 +178,7 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 			} else {
 				inet := l.Server.(*ServerINET)
 
-				tlsConfig, err := inet.newConfigTLS()
+				tlsConfig, err := inet.newTLSConfig()
 
 				if err != nil {
 					fnOnErr(err)
@@ -278,7 +278,7 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 
 			fnLog(log.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
 
-			tlsConfig, err := inet.newConfigTLS()
+			tlsConfig, err := inet.newTLSConfig()
 			if err != nil {
 				fnOnErr(err)
 				return
