@@ -38,10 +38,10 @@ type WithNetwork struct {
 	Net string `json:"network" yaml:"network" bson:"network"`
 }
 
-type ClientAuthCfgTLS struct {
-	// Enable/Disable client auth throw mTLS
-	ClientAuthTLS bool `json:"clientAuthTLS" yaml:"clientAuthTLS" bson:"clientAuthTLS"`
-	// ClientAuthType declares the policy the server will follow for
+type ClientAuthTLSConfig struct {
+	// Enable/Disable client auth through mTLS
+	Enable bool `json:"enable" yaml:"enable" bson:"enable"`
+	// AuthType declares the policy the server will follow for
 	// TLS Client Authentication.
 	//
 	// "NoClientCert" indicates that no client certificate should be requested
@@ -65,16 +65,17 @@ type ClientAuthCfgTLS struct {
 	// during the handshake, and that at least one valid certificate is required
 	// to be sent by the client.
 	//
-	// If ClientAuthTLS is set true, ClientAuthType must be set.
-	ClientAuthType  string `json:"clientAuthType" yaml:"clientAuthType" bson:"clientAuthType"`
-	ClientTrustedCA string `json:"clientTrustedCA" yaml:"clientTrustedCA" bson:"clientTrustedCA"`
+	// If ClientAuthTLS is set true, AuthType must be set.
+	AuthType string `json:"authType" yaml:"authType" bson:"authType"`
+	// CARoot certificate for clients certificates
+	TrustedCA string `json:"trustedCA" yaml:"trustedCA" bson:"trustedCA"`
 	// If set, server will verifie Common Name of certificate given by client has in this list.
 	// Otherwise server return Unauthtorized responce.
-	ClientsCommonNames []string `json:"clientsCommonNames" yaml:"clientsCommonNames" bson:"clientsCommonNames"`
+	ClientCommonNames []string `json:"clientCommonNames" yaml:"clientCommonNames" bson:"clientCommonNames"`
 }
 
-func (c *ClientAuthCfgTLS) getClientAuthType() tls.ClientAuthType {
-	switch c.ClientAuthType {
+func (c *ClientAuthTLSConfig) getAuthType() tls.ClientAuthType {
+	switch c.AuthType {
 	case "NoClientCert":
 		return tls.NoClientCert
 	case "RequestClientCert":
@@ -90,12 +91,15 @@ func (c *ClientAuthCfgTLS) getClientAuthType() tls.ClientAuthType {
 	}
 }
 
-func (c *ClientAuthCfgTLS) dump(ctx *dumpctx.Ctx, w io.Writer) {
+func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
 	ctx.Wrap(func() {
-		fmt.Fprintf(w, "%sclientAuthTLS: %t\n", ctx.Indent(), c.ClientAuthTLS)
-		fmt.Fprintf(w, "%sclientAuthType: %s\n", ctx.Indent(), c.ClientAuthType)
-		fmt.Fprintf(w, "%sclientTrustedCA: %s\n", ctx.Indent(), c.ClientTrustedCA)
-		fmt.Fprintf(w, "%sclientsCommonNames: %s\n", ctx.Indent(), c.ClientsCommonNames)
+		fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
+		ctx.Wrap(func() {
+			fmt.Fprintf(w, "%enable: %t\n", ctx.Indent(), c.Enable)
+			fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType)
+			fmt.Fprintf(w, "%strustedCA: %s\n", ctx.Indent(), c.TrustedCA)
+			fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
+		})
 	})
 }
 
@@ -104,13 +108,13 @@ type ServerBase struct {
 	WithNetwork `json:",inline" yaml:",inline" bson:",inline"`
 
 	GRPC struct {
-		Reflection       bool `yaml:"reflection"`
-		ClientAuthCfgTLS `json:",inline" yaml:",inline" bson:",inline"`
+		Reflection    bool                `yaml:"reflection"`
+		ClientAuthTLS ClientAuthTLSConfig `json:"clientAuthTLS" yaml:"clientAuthTLS" bson:"clientAuthTLS"`
 	} `yaml:"grpc"`
 
 	HTTP struct {
-		ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
-		ClientAuthCfgTLS  `json:",inline" yaml:",inline" bson:",inline"`
+		ReadHeaderTimeout time.Duration       `yaml:"readHeaderTimeout"`
+		ClientAuthTLS     ClientAuthTLSConfig `json:"clientAuthTLS" yaml:"clientAuthTLS" bson:"clientAuthTLS"`
 	} `yaml:"http"`
 
 	Pprof struct {
@@ -131,16 +135,16 @@ func (s *ServerBase) Network() string {
 	return "tcp"
 }
 
-func (s *ServerBase) getClientAuthConfig() *ClientAuthCfgTLS {
+func (s *ServerBase) getClientAuthConfig() *ClientAuthTLSConfig {
 	if s.Knd.Has(KindGRPC) {
-		return &s.GRPC.ClientAuthCfgTLS
+		return &s.GRPC.ClientAuthTLS
 	}
-	return &s.HTTP.ClientAuthCfgTLS
+	return &s.HTTP.ClientAuthTLS
 }
 
 func (s *ServerBase) validate() error {
-	if s.getClientAuthConfig().getClientAuthType().String() !=
-		s.getClientAuthConfig().ClientAuthType {
+	if s.getClientAuthConfig().getAuthType().String() !=
+		s.getClientAuthConfig().AuthType {
 		return ErrClientAuthTLSAuthType
 	}
 	return s.WithKind.validate()
