@@ -17,7 +17,6 @@ const (
 
 type clientAuthTypeTLS tls.ClientAuthType
 
-const clientAuthTypeTLSDefault clientAuthTypeTLS = 0
 const clientAuthTypeTLSUnknown clientAuthTypeTLS = 65535
 
 func (c clientAuthTypeTLS) String() string {
