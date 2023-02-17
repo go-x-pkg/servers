@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	strVersionTLS10      = "VersionTLS10"
-	strVersionTLS11      = "VersionTLS11"
-	strVersionTLS12      = "VersionTLS12"
-	strVersionTLS13      = "VersionTLS13"
-	strVersionTLSDefault = ""
+	strVersionTLS10 = "TLS 1.0"
+	strVersionTLS11 = "TLS 1.1"
+	strVersionTLS12 = "TLS 1.2"
+	strVersionTLS13 = "TLS 1.3"
 )
 
 type versionTLS uint16
 
-const versionTLSDefault versionTLS = 0
-const versionTLSUnknown versionTLS = 65535
+const versionTLSDefault versionTLS = tls.VersionTLS13
+
+const versionTLSUnknown versionTLS = 0
 
 func (v versionTLS) String() string {
 	switch v {
@@ -29,11 +29,40 @@ func (v versionTLS) String() string {
 		return strVersionTLS12
 	case tls.VersionTLS13:
 		return strVersionTLS13
-	case versionTLSDefault:
-		return strVersionTLS13
+	case versionTLSUnknown:
+		return "unknown"
 	default:
-		return "versionTLSUnknown"
+		return "undefined"
 	}
+}
+
+func (v versionTLS) SetedOrDefault() string {
+	if v.isDefined() {
+		return v.String()
+	}
+	return versionTLSDefault.String()
+}
+
+func (v versionTLS) isDefined() bool {
+	switch v {
+	case tls.VersionTLS10:
+		return true
+	case tls.VersionTLS11:
+		return true
+	case tls.VersionTLS12:
+		return true
+	case tls.VersionTLS13:
+		return true
+	default:
+		return false
+	}
+}
+
+func (v versionTLS) setedOrDefault() versionTLS {
+	if v.isDefined() {
+		return v
+	}
+	return versionTLSDefault
 }
 
 func (v *versionTLS) unmarshal(fn func(interface{}) error) error {
@@ -42,10 +71,9 @@ func (v *versionTLS) unmarshal(fn func(interface{}) error) error {
 	if err := fn(&raw); err != nil {
 		return fmt.Errorf("error unmarshal tls version: %w", err)
 	}
-	*v = newVersionTLS(raw)
 
-	if *v == versionTLSUnknown {
-		return fmt.Errorf("unknown tls version: %q", raw)
+	if *v = newVersionTLS(raw); *v == versionTLSUnknown {
+		return fmt.Errorf("error unmarshal tls version: %s", versionTLSUnknown)
 	}
 
 	return nil
@@ -76,8 +104,6 @@ func newVersionTLS(raw string) versionTLS {
 	case strVersionTLS12:
 		return tls.VersionTLS12
 	case strVersionTLS13:
-		return tls.VersionTLS13
-	case strVersionTLSDefault:
 		return tls.VersionTLS13
 	default:
 		return versionTLSUnknown

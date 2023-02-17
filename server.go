@@ -18,6 +18,7 @@ type (
 	serverKinder    interface{ Kind() Kind }
 	serverAddred    interface{ Addr() string }
 	serverNetworker interface{ Network() string }
+	ServerAuther    interface{ ClientAuthTLS() *ClientAuthTLSConfig }
 
 	serverValidator interface{ validate() error }
 

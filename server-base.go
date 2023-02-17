@@ -37,64 +37,16 @@ type WithNetwork struct {
 	Net string `json:"network" yaml:"network" bson:"network"`
 }
 
-type ClientAuthTLSConfig struct {
-	// Enable/Disable client auth through mTLS
-	Enable bool `json:"enable" yaml:"enable" bson:"enable"`
-	// AuthType declares the policy the server will follow for
-	// TLS Client Authentication.
-	//
-	// "NoClientCert" indicates that no client certificate should be requested
-	// during the handshake, and if any certificates are sent they will not
-	// be verified.
-	//
-	// "RequestClientCert" indicates that a client certificate should be requested
-	// during the handshake, but does not require that the client send any
-	// certificates.
-	//
-	// "RequireAnyClientCert" indicates that a client certificate should be requested
-	// during the handshake, and that at least one certificate is required to be
-	// sent by the client, but that certificate is not required to be valid.
-	//
-	// "VerifyClientCertIfGiven" indicates that a client certificate should be requested
-	// during the handshake, but does not require that the client sends a
-	// certificate. If the client does send a certificate it is required to be
-	// valid.
-	//
-	// "RequireAndVerifyClientCert" indicates that a client certificate should be requested
-	// during the handshake, and that at least one valid certificate is required
-	// to be sent by the client.
-	//
-	// If ClientAuthTLS is set true, AuthType must be set.
-	AuthType clientAuthTypeTLS `json:"authType" yaml:"authType" bson:"authType"`
-	// CARoot certificate for clients certificates. Optional.
-	TrustedCA string `json:"trustedCA" yaml:"trustedCA" bson:"trustedCA"`
-	// If set, server will verifie Common Name of certificate given by client has in this list.
-	// Otherwise server return Unauthtorized responce.
-	ClientCommonNames []string `json:"clientCommonNames" yaml:"clientCommonNames" bson:"clientCommonNames"`
-}
-
-func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
-	fmt.Fprintf(w, "%sclientAuthTLS:\n", ctx.Indent())
-	ctx.Wrap(func() {
-		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), c.Enable)
-		fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType)
-		fmt.Fprintf(w, "%strustedCA: %s\n", ctx.Indent(), c.TrustedCA)
-		fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
-	})
-}
-
 type ServerBase struct {
 	WithKind    `json:",inline" yaml:",inline" bson:",inline"`
 	WithNetwork `json:",inline" yaml:",inline" bson:",inline"`
 
 	GRPC struct {
-		Reflection    bool                `yaml:"reflection"`
-		ClientAuthTLS ClientAuthTLSConfig `json:"clientAuthTLS" yaml:"clientAuthTLS" bson:"clientAuthTLS"`
+		Reflection bool `yaml:"reflection"`
 	} `yaml:"grpc"`
 
 	HTTP struct {
-		ReadHeaderTimeout time.Duration       `yaml:"readHeaderTimeout"`
-		ClientAuthTLS     ClientAuthTLSConfig `json:"clientAuthTLS" yaml:"clientAuthTLS" bson:"clientAuthTLS"`
+		ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout"`
 	} `yaml:"http"`
 
 	Pprof struct {
@@ -113,13 +65,6 @@ func (s *ServerBase) Network() string {
 	}
 
 	return "tcp"
-}
-
-func (s *ServerBase) getClientAuthTLS() *ClientAuthTLSConfig {
-	if s.Knd.Has(KindGRPC) {
-		return &s.GRPC.ClientAuthTLS
-	}
-	return &s.HTTP.ClientAuthTLS
 }
 
 func (s *ServerBase) validate() error {
@@ -147,7 +92,6 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 		fmt.Fprintf(w, "%sgrpc:\n", ctx.Indent())
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%sreflection: %t\n", ctx.Indent(), s.GRPC.Reflection)
-			s.getClientAuthTLS().dump(ctx, w)
 		})
 	}
 
@@ -155,7 +99,6 @@ func (s *ServerBase) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 		fmt.Fprintf(w, "%shttp:\n", ctx.Indent())
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%sreadHeaderTimeout: %s\n", ctx.Indent(), s.HTTP.ReadHeaderTimeout)
-			s.getClientAuthTLS().dump(ctx, w)
 		})
 	}
 

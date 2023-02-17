@@ -27,6 +27,10 @@ type ServerINET struct {
 		MaxVersion               versionTLS `yaml:"maxVersion"`
 		PreferServerCipherSuites *bool      `yaml:"preferServerCipherSuites"`
 	} `yaml:"tls"`
+
+	ClientAuth struct {
+		TLS ClientAuthTLSConfig `yaml:"mtls"`
+	} `yaml:"clientAuth"`
 }
 
 func (s *ServerINET) Base() *ServerBase { return &s.ServerBase }
@@ -37,14 +41,18 @@ func (s *ServerINET) Addr() string {
 	return net.JoinHostPort(s.Host, strconv.Itoa(s.Port))
 }
 
+func (s *ServerINET) ClientAuthTLS() *ClientAuthTLSConfig {
+	return &s.ClientAuth.TLS
+}
+
 func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
-	if !s.TLS.Enable && !s.getClientAuthTLS().Enable {
+	if !s.TLS.Enable && !s.ClientAuth.TLS.Enable {
 		return nil, nil
 	}
 
 	tlsConfig := &tls.Config{
-		MinVersion:               uint16(s.TLS.MinVersion),
-		MaxVersion:               uint16(s.TLS.MaxVersion),
+		MinVersion:               uint16(s.TLS.MinVersion.setedOrDefault()),
+		MaxVersion:               uint16(s.TLS.MaxVersion.setedOrDefault()),
 		PreferServerCipherSuites: *s.TLS.PreferServerCipherSuites,
 	}
 
@@ -58,12 +66,13 @@ func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
 		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
-	if s.getClientAuthTLS().Enable {
-		tlsConfig.ClientAuth = tls.ClientAuthType(s.getClientAuthTLS().AuthType)
+	if s.ClientAuth.TLS.Enable {
+		tlsConfig.ClientAuth = tls.ClientAuthType(
+			s.ClientAuth.TLS.AuthType.setedOrDefault())
 
-		if s.getClientAuthTLS().TrustedCA != "" {
+		if s.ClientAuth.TLS.TrustedCA != "" {
 			if caCertPool, err := loadCACertPool(
-				s.getClientAuthTLS().TrustedCA); err != nil {
+				s.ClientAuth.TLS.TrustedCA); err != nil {
 				return nil, err
 			} else {
 				tlsConfig.ClientCAs = caCertPool
@@ -80,8 +89,7 @@ func (s *ServerINET) interpolate(interpolateFn func(string) string) {
 
 	s.TLS.CertFile = interpolateFn(s.TLS.CertFile)
 	s.TLS.KeyFile = interpolateFn(s.TLS.KeyFile)
-	s.getClientAuthTLS().TrustedCA = interpolateFn(
-		s.getClientAuthTLS().TrustedCA)
+	s.ClientAuth.TLS.TrustedCA = interpolateFn(s.ClientAuth.TLS.TrustedCA)
 }
 
 func (s *ServerINET) validate() error {
@@ -90,6 +98,11 @@ func (s *ServerINET) validate() error {
 	}
 
 	if s.TLS.Enable {
+		if s.TLS.PreferServerCipherSuites == nil {
+			p := true
+			s.TLS.PreferServerCipherSuites = &p
+		}
+
 		if v := s.TLS.CertFile; v != "" {
 			if exists, err := fnspath.IsExists(v); err != nil {
 				return fmt.Errorf("tls cert-file existence check failed: %w", err)
@@ -109,11 +122,6 @@ func (s *ServerINET) validate() error {
 		} else {
 			return ErrTLSKeyFilePathNotProvided
 		}
-
-		if s.TLS.PreferServerCipherSuites == nil {
-			p := true
-			s.TLS.PreferServerCipherSuites = &p
-		}
 	}
 
 	return nil
@@ -125,18 +133,26 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 
 	if s.TLS.Enable {
 		fmt.Fprintf(w, "%stls:\n", ctx.Indent())
-
 		ctx.Wrap(func() {
 			fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.TLS.Enable)
 			fmt.Fprintf(w, "%scertFile: %s\n", ctx.Indent(), s.TLS.CertFile)
 			fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
-			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion)
-			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion)
-			fmt.Fprintf(w, "%sPreferServerCipherSuites: %t\n", ctx.Indent(), *s.TLS.PreferServerCipherSuites)
+			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion.SetedOrDefault())
+			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion.SetedOrDefault())
+			fmt.Fprintf(w, "%spreferServerCipherSuites: %t\n", ctx.Indent(), *s.TLS.PreferServerCipherSuites)
 
 			if !*s.TLS.PreferServerCipherSuites {
-				fmt.Fprintf(w, "%sWARNING: PreferServerCipherSuites is false. %s\n",
+				fmt.Fprintf(w, "%sWARNING: preferServerCipherSuites is false. %s\n",
 					ctx.Indent(), "Set to true for avoid potentinal security risk!")
+			}
+		})
+	}
+
+	if s.ClientAuth.TLS.Enable {
+		fmt.Fprintf(w, "%sclientAuth:\n", ctx.Indent())
+		ctx.Wrap(func() {
+			if s.ClientAuth.TLS.Enable {
+				s.ClientAuth.TLS.dump(ctx, w)
 			}
 		})
 	}
