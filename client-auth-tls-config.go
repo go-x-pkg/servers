@@ -37,18 +37,24 @@ type ClientAuthTLSConfig struct {
 	// If ClientAuthTLS is set true, AuthType must be set.
 	AuthType clientAuthTypeTLS `json:"authType" yaml:"authType" bson:"authType"`
 	// CARoot certificate for clients certificates. Optional.
-	TrustedCA string `json:"trustedCA" yaml:"trustedCA" bson:"trustedCA"`
+	TrustedCA string `json:"trustedCa" yaml:"trustedCa" bson:"trustedCa"`
 	// If set, server will verifie Common Name of certificate given by client has in this list.
-	// Otherwise server return Unauthtorized responce.
+	// Otherwise server return Unauthtorized response.
 	ClientCommonNames []string `json:"clientCommonNames" yaml:"clientCommonNames" bson:"clientCommonNames"`
 }
 
-func (c ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
+func (c *ClientAuthTLSConfig) defaultize() {
+	if c.AuthType == clientAuthTypeTLSUnknown {
+		c.AuthType = defaultClientAuthTypeTLS
+	}
+}
+
+func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%smtls:\n", ctx.Indent())
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), c.Enable)
-		fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType.SetedOrDefault())
-		fmt.Fprintf(w, "%strustedCA: %s\n", ctx.Indent(), c.TrustedCA)
+		fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType.orDefault())
+		fmt.Fprintf(w, "%strustedCA: %q\n", ctx.Indent(), c.TrustedCA)
 		fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
 	})
 }

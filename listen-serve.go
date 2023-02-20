@@ -150,7 +150,7 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 
 			server := &http.Server{
 				Addr:    addr,
-				Handler: fnNewHandler(s),
+				Handler: fnNewHandler(l.Server),
 
 				// see: Potential slowloris attack GO-S2112
 				ReadHeaderTimeout: s.Base().HTTP.ReadHeaderTimeout,
@@ -179,7 +179,6 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 				inet := l.Server.(*ServerINET)
 
 				tlsConfig, err := inet.newTLSConfig()
-
 				if err != nil {
 					fnOnErr(err)
 					return
@@ -289,7 +288,7 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 				opts = append(opts, opt)
 			}
 
-			server := fnNewServer(s, opts...)
+			server := fnNewServer(l.Server, opts...)
 
 			if inet.GRPC.Reflection {
 				reflection.Register(server)

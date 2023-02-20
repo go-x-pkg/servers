@@ -230,7 +230,8 @@ func (ss *Servers) ServeHTTP(fnNewServer func(Server) http.Handler, fnArgs ...Ar
 }
 
 func (ss *Servers) ServeGRPC(
-	fnNewServer func(s Server, opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg) error {
+	fnNewServer func(s Server, opts ...grpc.ServerOption) *grpc.Server, fnArgs ...Arg,
+) error {
 	return ss.
 		IntoIter().
 		FilterGRPC().
