@@ -15,4 +15,10 @@ var (
 	ErrUnixSocketPathNotProvided    = errors.New("tls key-file path is not provided")
 
 	ErrGotBothInetAndUnix = errors.New("provided server is both unix and inet")
+
+	ErrLoadTrustedCA = errors.New("error load trusted CA")
+
+	ErrUnknownVersionTLS = errors.New("unknown version TLS")
+
+	ErrUnknownClientAuthTypeTLS = errors.New("unknown client auth type TLS")
 )

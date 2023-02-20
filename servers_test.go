@@ -29,6 +29,35 @@ func TestServers(t *testing.T) {
     certFile: "/etc/acme/tls.cert"
     keyFile: "/etc/acme/tls.key"`},
 
+		{`- kind: inet
+  host: 0.0.0.0
+  port: 443
+  tls:
+    enable: true
+    certFile: "/etc/acme/tls.cert"
+    keyFile: "/etc/acme/tls.key"`},
+
+		{`- kind: inet
+  host: 0.0.0.0
+  port: 443
+  tls:
+    enable: true
+    certFile: "/etc/acme/tls.cert"
+    keyFile: "/etc/acme/tls.key"
+    preferServerCipherSuites: false`},
+
+		{`- kind: inet
+  host: 0.0.0.0
+  port: 443
+  tls:w
+    enable: true
+    certFile: "/etc/acme/tls.cert"
+    keyFile: "/etc/acme/tls.key"
+  clientAuth:
+    tls:
+      enable: true
+      authType: require-and-verify-client-cert`},
+
 		{`- kind: unix
   addr: /run/acme/acme.sock`},
 

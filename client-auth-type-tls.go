@@ -7,66 +7,69 @@ import (
 )
 
 const (
-	strNoClientCert               = "NoClientCert"
-	strRequestClientCert          = "RequestClientCert"
-	strRequireAnyClientCert       = "RequireAnyClientCert"
-	strVerifyClientCertIfGiven    = "VerifyClientCertIfGiven"
-	strRequireAndVerifyClientCert = "RequireAndVerifyClientCert"
+	clientAuthTypeTLSNoClientCertStr               = "NoClientCert"
+	clientAuthTypeTLSRequestClientCertStr          = "RequestClientCert"
+	clientAuthTypeTLSRequireAnyClientCertStr       = "RequireAnyClientCert"
+	clientAuthTypeTLSVerifyClientCertIfGivenStr    = "VerifyClientCertIfGiven"
+	clientAuthTypeTLSRequireAndVerifyClientCertStr = "RequireAndVerifyClientCert"
 )
 
-type clientAuthTypeTLS tls.ClientAuthType
+type clientAuthTypeTLS uint8
 
-const clientAuthTypeTLSDefault clientAuthTypeTLS = clientAuthTypeTLS(tls.NoClientCert)
-const clientAuthTypeTLSUnknown clientAuthTypeTLS = -1
+const (
+	clientAuthTypeTLSUnknown clientAuthTypeTLS = iota
+	clientAuthTypeTLSNoClientCert
+	clientAuthTypeTLSRequestClientCert
+	clientAuthTypeTLSRequireAnyClientCert
+	clientAuthTypeTLSVerifyClientCertIfGiven
+	clientAuthTypeTLSRequireAndVerifyClientCert
+)
 
 func (c clientAuthTypeTLS) String() string {
-	switch tls.ClientAuthType(c) {
-	case tls.NoClientCert:
-		return strNoClientCert
-	case tls.RequestClientCert:
-		return strRequestClientCert
-	case tls.RequireAnyClientCert:
-		return strRequireAnyClientCert
-	case tls.VerifyClientCertIfGiven:
-		return strVerifyClientCertIfGiven
-	case tls.RequireAndVerifyClientCert:
-		return strRequireAndVerifyClientCert
-	case tls.ClientAuthType(clientAuthTypeTLSUnknown):
+	switch c {
+	case clientAuthTypeTLSUnknown:
 		return "unknown"
+	case clientAuthTypeTLSNoClientCert:
+		return clientAuthTypeTLSNoClientCertStr
+	case clientAuthTypeTLSRequestClientCert:
+		return clientAuthTypeTLSRequestClientCertStr
+	case clientAuthTypeTLSRequireAnyClientCert:
+		return clientAuthTypeTLSRequireAnyClientCertStr
+	case clientAuthTypeTLSVerifyClientCertIfGiven:
+		return clientAuthTypeTLSVerifyClientCertIfGivenStr
+	case clientAuthTypeTLSRequireAndVerifyClientCert:
+		return clientAuthTypeTLSRequireAndVerifyClientCertStr
 	default:
-		return "undefined"
+		panic("undefined clientAuthTypeTLS")
 	}
 }
 
-func (c clientAuthTypeTLS) SetedOrDefault() string {
-	if c.isDefined() {
-		return c.String()
-	}
-	return versionTLSDefault.String()
-}
-
-func (c clientAuthTypeTLS) isDefined() bool {
-	switch tls.ClientAuthType(c) {
-	case tls.NoClientCert:
-		return true
-	case tls.RequestClientCert:
-		return true
-	case tls.RequireAnyClientCert:
-		return true
-	case tls.VerifyClientCertIfGiven:
-		return true
-	case tls.RequireAndVerifyClientCert:
-		return true
+// CryptoTLSVersion return native tls.Version* from crypto/tls package.
+func (c clientAuthTypeTLS) CryptoTLSClientAuthType() tls.ClientAuthType {
+	switch c {
+	case clientAuthTypeTLSUnknown:
+		return defaultClientAuthTypeTLS.CryptoTLSClientAuthType()
+	case clientAuthTypeTLSNoClientCert:
+		return tls.NoClientCert
+	case clientAuthTypeTLSRequestClientCert:
+		return tls.RequestClientCert
+	case clientAuthTypeTLSRequireAnyClientCert:
+		return tls.RequireAnyClientCert
+	case clientAuthTypeTLSVerifyClientCertIfGiven:
+		return tls.VerifyClientCertIfGiven
+	case clientAuthTypeTLSRequireAndVerifyClientCert:
+		return tls.RequireAndVerifyClientCert
 	default:
-		return false
+		return defaultClientAuthTypeTLS.CryptoTLSClientAuthType()
 	}
 }
 
-func (c clientAuthTypeTLS) setedOrDefault() clientAuthTypeTLS {
-	if c.isDefined() {
-		return c
+func (c clientAuthTypeTLS) orDefault() clientAuthTypeTLS {
+	if c == clientAuthTypeTLSUnknown {
+		return defaultClientAuthTypeTLS
 	}
-	return clientAuthTypeTLSDefault
+
+	return c
 }
 
 func (c *clientAuthTypeTLS) unmarshal(fn func(interface{}) error) error {
@@ -76,8 +79,9 @@ func (c *clientAuthTypeTLS) unmarshal(fn func(interface{}) error) error {
 		return fmt.Errorf("error unmarshal client authType: %w", err)
 	}
 
-	if *c = newClientAuthTypeTLS(raw); *c == clientAuthTypeTLSUnknown {
-		return fmt.Errorf("error unmarshal client authType: %s", clientAuthTypeTLSUnknown)
+	*c = newClientAuthTypeTLS(raw)
+	if *c == clientAuthTypeTLSUnknown {
+		return fmt.Errorf("%s: %w", raw, ErrUnknownClientAuthTypeTLS)
 	}
 
 	return nil
@@ -101,16 +105,16 @@ func (c *clientAuthTypeTLS) UnmarshalYAML(unmarshal func(interface{}) error) err
 
 func newClientAuthTypeTLS(raw string) clientAuthTypeTLS {
 	switch raw {
-	case strNoClientCert:
-		return clientAuthTypeTLS(tls.NoClientCert)
-	case strRequestClientCert:
-		return clientAuthTypeTLS(tls.RequestClientCert)
-	case strRequireAnyClientCert:
-		return clientAuthTypeTLS(tls.RequireAnyClientCert)
-	case strVerifyClientCertIfGiven:
-		return clientAuthTypeTLS(tls.VerifyClientCertIfGiven)
-	case strRequireAndVerifyClientCert:
-		return clientAuthTypeTLS(tls.RequireAndVerifyClientCert)
+	case "no-client-cert", clientAuthTypeTLSNoClientCertStr:
+		return clientAuthTypeTLSNoClientCert
+	case "request-client-cert", clientAuthTypeTLSRequestClientCertStr:
+		return clientAuthTypeTLSRequestClientCert
+	case "require-any-client-cert", clientAuthTypeTLSRequireAnyClientCertStr:
+		return clientAuthTypeTLSRequireAnyClientCert
+	case "verify-client-cert-if-given", clientAuthTypeTLSVerifyClientCertIfGivenStr:
+		return clientAuthTypeTLSVerifyClientCertIfGiven
+	case "require-and-verify-client-cert", clientAuthTypeTLSRequireAndVerifyClientCertStr:
+		return clientAuthTypeTLSRequireAndVerifyClientCert
 	default:
 		return clientAuthTypeTLSUnknown
 	}

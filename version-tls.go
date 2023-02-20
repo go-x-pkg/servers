@@ -8,62 +8,63 @@ import (
 )
 
 const (
-	strVersionTLS10 = "tls-1.0"
-	strVersionTLS11 = "tls-1.1"
-	strVersionTLS12 = "tls-1.2"
-	strVersionTLS13 = "tls-1.3"
+	versionTLS10Str = "tls-1.0"
+	versionTLS11Str = "tls-1.1"
+	versionTLS12Str = "tls-1.2"
+	versionTLS13Str = "tls-1.3"
 )
 
-type versionTLS uint16
+type versionTLS uint8
 
-const versionTLSDefault versionTLS = tls.VersionTLS13
-
-const versionTLSUnknown versionTLS = 0
+const (
+	versionTLSUnknown versionTLS = iota
+	versionTLS10
+	versionTLS11
+	versionTLS12
+	versionTLS13
+)
 
 func (v versionTLS) String() string {
 	switch v {
-	case tls.VersionTLS10:
-		return strVersionTLS10
-	case tls.VersionTLS11:
-		return strVersionTLS11
-	case tls.VersionTLS12:
-		return strVersionTLS12
-	case tls.VersionTLS13:
-		return strVersionTLS13
 	case versionTLSUnknown:
 		return "unknown"
+	case versionTLS10:
+		return versionTLS10Str
+	case versionTLS11:
+		return versionTLS11Str
+	case versionTLS12:
+		return versionTLS12Str
+	case versionTLS13:
+		return versionTLS13Str
 	default:
-		return "undefined"
+		panic("undefined versionTLS")
 	}
 }
 
-func (v versionTLS) SetedOrDefault() string {
-	if v.isDefined() {
-		return v.String()
-	}
-	return versionTLSDefault.String()
-}
-
-func (v versionTLS) isDefined() bool {
+// CryptoTLSVersion return native tls.Version* from crypto/tls package.
+func (v versionTLS) CryptoTLSVersion() uint16 {
 	switch v {
-	case tls.VersionTLS10:
-		return true
-	case tls.VersionTLS11:
-		return true
-	case tls.VersionTLS12:
-		return true
-	case tls.VersionTLS13:
-		return true
+	case versionTLSUnknown:
+		return defaultVersionTLS.CryptoTLSVersion()
+	case versionTLS10:
+		return tls.VersionTLS10
+	case versionTLS11:
+		return tls.VersionTLS11
+	case versionTLS12:
+		return tls.VersionTLS12
+	case versionTLS13:
+		return tls.VersionTLS13
 	default:
-		return false
+		return defaultVersionTLS.CryptoTLSVersion()
 	}
 }
 
-func (v versionTLS) setedOrDefault() versionTLS {
-	if v.isDefined() {
-		return v
+func (v versionTLS) orDefault() versionTLS {
+	if v == versionTLSUnknown {
+		return defaultVersionTLS
 	}
-	return versionTLSDefault
+
+	return v
 }
 
 func (v *versionTLS) unmarshal(fn func(interface{}) error) error {
@@ -73,8 +74,9 @@ func (v *versionTLS) unmarshal(fn func(interface{}) error) error {
 		return fmt.Errorf("error unmarshal tls version: %w", err)
 	}
 
-	if *v = newVersionTLS(raw); *v == versionTLSUnknown {
-		return fmt.Errorf("error unmarshal tls version: %s", versionTLSUnknown)
+	*v = newVersionTLS(raw)
+	if *v == versionTLSUnknown {
+		return fmt.Errorf("%s: %w", raw, ErrUnknownVersionTLS)
 	}
 
 	return nil
@@ -98,14 +100,14 @@ func (v *versionTLS) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func newVersionTLS(raw string) versionTLS {
 	switch strings.ToLower(raw) {
-	case strVersionTLS10:
-		return tls.VersionTLS10
-	case strVersionTLS11:
-		return tls.VersionTLS11
-	case strVersionTLS12:
-		return tls.VersionTLS12
-	case strVersionTLS13:
-		return tls.VersionTLS13
+	case versionTLS10Str, "tls 1.0", "versiontls10":
+		return versionTLS10
+	case versionTLS11Str, "tls 1.1", "versiontls11":
+		return versionTLS11
+	case versionTLS12Str, "tls 1.2", "versiontls12":
+		return versionTLS12
+	case versionTLS13Str, "tls 1.3", "versiontls13":
+		return versionTLS13
 	default:
 		return versionTLSUnknown
 	}

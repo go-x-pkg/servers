@@ -15,6 +15,12 @@ const (
 
 	// Potential slowloris attack GO-S2112.
 	defaultReadHeaderTimeout = 3 * time.Second
+
+	defaultTLSPreferServerCipherSuites = true
+
+	defaultVersionTLS = versionTLS13
+
+	defaultClientAuthTypeTLS = clientAuthTypeTLSNoClientCert
 )
 
 var (

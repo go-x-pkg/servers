@@ -29,8 +29,16 @@ type ServerINET struct {
 	} `yaml:"tls"`
 
 	ClientAuth struct {
-		TLS ClientAuthTLSConfig `yaml:"mtls"`
+		TLS ClientAuthTLSConfig `yaml:"tls"`
 	} `yaml:"clientAuth"`
+}
+
+func (s *ServerINET) tlsPreferServerCipherSuites() bool {
+	if s.TLS.PreferServerCipherSuites == nil {
+		return defaultTLSPreferServerCipherSuites
+	}
+
+	return *s.TLS.PreferServerCipherSuites
 }
 
 func (s *ServerINET) Base() *ServerBase { return &s.ServerBase }
@@ -51,9 +59,11 @@ func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
 	}
 
 	tlsConfig := &tls.Config{
-		MinVersion:               uint16(s.TLS.MinVersion.setedOrDefault()),
-		MaxVersion:               uint16(s.TLS.MaxVersion.setedOrDefault()),
-		PreferServerCipherSuites: *s.TLS.PreferServerCipherSuites,
+		MinVersion: s.TLS.MinVersion.orDefault().CryptoTLSVersion(),
+		MaxVersion: s.TLS.MaxVersion.orDefault().CryptoTLSVersion(),
+
+		//nolint: gosec
+		PreferServerCipherSuites: s.tlsPreferServerCipherSuites(),
 	}
 
 	if s.TLS.Enable {
@@ -67,18 +77,19 @@ func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
 	}
 
 	if s.ClientAuth.TLS.Enable {
-		tlsConfig.ClientAuth = tls.ClientAuthType(
-			s.ClientAuth.TLS.AuthType.setedOrDefault())
+		tlsConfig.ClientAuth = s.ClientAuth.TLS.AuthType.orDefault().CryptoTLSClientAuthType()
 
 		if s.ClientAuth.TLS.TrustedCA != "" {
-			if caCertPool, err := loadCACertPool(
-				s.ClientAuth.TLS.TrustedCA); err != nil {
+			caCertPool, err := loadCACertPool(
+				s.ClientAuth.TLS.TrustedCA)
+			if err != nil {
 				return nil, err
-			} else {
-				tlsConfig.ClientCAs = caCertPool
 			}
+
+			tlsConfig.ClientCAs = caCertPool
 		}
 	}
+
 	return tlsConfig, nil
 }
 
@@ -98,11 +109,6 @@ func (s *ServerINET) validate() error {
 	}
 
 	if s.TLS.Enable {
-		if s.TLS.PreferServerCipherSuites == nil {
-			p := true
-			s.TLS.PreferServerCipherSuites = &p
-		}
-
 		if v := s.TLS.CertFile; v != "" {
 			if exists, err := fnspath.IsExists(v); err != nil {
 				return fmt.Errorf("tls cert-file existence check failed: %w", err)
@@ -127,6 +133,24 @@ func (s *ServerINET) validate() error {
 	return nil
 }
 
+func (s *ServerINET) defaultize() error {
+	if err := s.ServerBase.defaultize(); err != nil {
+		return err
+	}
+
+	if s.TLS.MinVersion == versionTLSUnknown {
+		s.TLS.MinVersion = defaultVersionTLS
+	}
+
+	if s.TLS.MaxVersion == versionTLSUnknown {
+		s.TLS.MaxVersion = defaultVersionTLS
+	}
+
+	s.ClientAuth.TLS.defaultize()
+
+	return nil
+}
+
 func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%shost: %s\n", ctx.Indent(), s.Host)
 	fmt.Fprintf(w, "%sport: %d\n", ctx.Indent(), s.Port)
@@ -137,11 +161,11 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 			fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.TLS.Enable)
 			fmt.Fprintf(w, "%scertFile: %s\n", ctx.Indent(), s.TLS.CertFile)
 			fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
-			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion.SetedOrDefault())
-			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion.SetedOrDefault())
-			fmt.Fprintf(w, "%spreferServerCipherSuites: %t\n", ctx.Indent(), *s.TLS.PreferServerCipherSuites)
+			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion.orDefault())
+			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion.orDefault())
+			fmt.Fprintf(w, "%spreferServerCipherSuites: %t\n", ctx.Indent(), s.tlsPreferServerCipherSuites())
 
-			if !*s.TLS.PreferServerCipherSuites {
+			if !s.tlsPreferServerCipherSuites() {
 				fmt.Fprintf(w, "%sWARNING: preferServerCipherSuites is false. %s\n",
 					ctx.Indent(), "Set to true for avoid potentinal security risk!")
 			}
@@ -169,8 +193,8 @@ func loadCACertPool(caCertPath string) (*x509.CertPool, error) {
 
 	caCertPool := x509.NewCertPool()
 	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-		return nil, fmt.Errorf("error load TrustedCA (:cert %q)",
-			caCertPath)
+		return nil, fmt.Errorf("(:cert %q): %w", caCertPath, ErrLoadTrustedCA)
 	}
+
 	return caCertPool, nil
 }
