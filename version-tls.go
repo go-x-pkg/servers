@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 const (
-	strVersionTLS10 = "TLS 1.0"
-	strVersionTLS11 = "TLS 1.1"
-	strVersionTLS12 = "TLS 1.2"
-	strVersionTLS13 = "TLS 1.3"
+	strVersionTLS10 = "tls-1.0"
+	strVersionTLS11 = "tls-1.1"
+	strVersionTLS12 = "tls-1.2"
+	strVersionTLS13 = "tls-1.3"
 )
 
 type versionTLS uint16
@@ -96,7 +97,7 @@ func (v *versionTLS) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func newVersionTLS(raw string) versionTLS {
-	switch raw {
+	switch strings.ToLower(raw) {
 	case strVersionTLS10:
 		return tls.VersionTLS10
 	case strVersionTLS11:
