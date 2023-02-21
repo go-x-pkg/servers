@@ -155,31 +155,25 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 	fmt.Fprintf(w, "%shost: %s\n", ctx.Indent(), s.Host)
 	fmt.Fprintf(w, "%sport: %d\n", ctx.Indent(), s.Port)
 
-	if s.TLS.Enable {
-		fmt.Fprintf(w, "%stls:\n", ctx.Indent())
-		ctx.Wrap(func() {
-			fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.TLS.Enable)
-			fmt.Fprintf(w, "%scertFile: %s\n", ctx.Indent(), s.TLS.CertFile)
-			fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
-			fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion.orDefault())
-			fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion.orDefault())
-			fmt.Fprintf(w, "%spreferServerCipherSuites: %t\n", ctx.Indent(), s.tlsPreferServerCipherSuites())
+	fmt.Fprintf(w, "%stls:\n", ctx.Indent())
+	ctx.Wrap(func() {
+		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), s.TLS.Enable)
+		fmt.Fprintf(w, "%scertFile: %s\n", ctx.Indent(), s.TLS.CertFile)
+		fmt.Fprintf(w, "%skeyFile: %s\n", ctx.Indent(), s.TLS.KeyFile)
+		fmt.Fprintf(w, "%sminVersion: %s\n", ctx.Indent(), s.TLS.MinVersion.orDefault())
+		fmt.Fprintf(w, "%smaxVersion: %s\n", ctx.Indent(), s.TLS.MaxVersion.orDefault())
+		fmt.Fprintf(w, "%spreferServerCipherSuites: %t\n", ctx.Indent(), s.tlsPreferServerCipherSuites())
 
-			if !s.tlsPreferServerCipherSuites() {
-				fmt.Fprintf(w, "%sWARNING: preferServerCipherSuites is false. %s\n",
-					ctx.Indent(), "Set to true for avoid potentinal security risk!")
-			}
-		})
-	}
+		if s.TLS.Enable && !s.tlsPreferServerCipherSuites() {
+			fmt.Fprintf(w, "%sWARNING: preferServerCipherSuites is false. %s\n",
+				ctx.Indent(), "Set to true for avoid potentinal security risk!")
+		}
+	})
 
-	if s.ClientAuth.TLS.Enable {
-		fmt.Fprintf(w, "%sclientAuth:\n", ctx.Indent())
-		ctx.Wrap(func() {
-			if s.ClientAuth.TLS.Enable {
-				s.ClientAuth.TLS.dump(ctx, w)
-			}
-		})
-	}
+	fmt.Fprintf(w, "%sclientAuth:\n", ctx.Indent())
+	ctx.Wrap(func() {
+		s.ClientAuth.TLS.dump(ctx, w)
+	})
 
 	s.ServerBase.Dump(ctx, w)
 }
