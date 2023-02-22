@@ -21,4 +21,6 @@ var (
 	ErrUnknownVersionTLS = errors.New("unknown version TLS")
 
 	ErrUnknownClientAuthTypeTLS = errors.New("unknown client auth type TLS")
+
+	ErrInvalidTLSConfigSet = errors.New("client auth tls is enabled but server tls not, server tls must be enable for client tls auth can work.")
 )
