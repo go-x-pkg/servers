@@ -108,6 +108,10 @@ func (s *ServerINET) validate() error {
 		return err
 	}
 
+	if !s.TLS.Enable && s.ClientAuth.TLS.Enable {
+		return ErrInvalidTLSConfigSet
+	}
+
 	if s.TLS.Enable {
 		if v := s.TLS.CertFile; v != "" {
 			if exists, err := fnspath.IsExists(v); err != nil {
