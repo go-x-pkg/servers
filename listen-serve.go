@@ -5,17 +5,30 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-x-pkg/log"
+	xlog "github.com/go-x-pkg/log"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 )
+
+type fnLogHTTPError struct {
+	logger *xlog.FnT
+}
+
+func (fw *fnLogHTTPError) Write(raw []byte) (n int, err error) {
+	msg := strings.TrimSuffix(string(raw), "\n")
+	fw.logger.Log(xlog.Error, "gin server", zap.Error(errors.New(msg)))
+	return len(raw), nil
+}
 
 type ServerListener struct {
 	Server
@@ -76,7 +89,7 @@ func (it iterator) Listen(fnArgs ...Arg) (ss Servers, errs []error) {
 					return
 				}
 
-				fnLog(log.Info, `{"status": "chmod OK", "perms": "%03o | %s", "addr": %q, "cmd": "chmod %o %s"}`,
+				fnLog(xlog.Info, `{"status": "chmod OK", "perms": "%03o | %s", "addr": %q, "cmd": "chmod %o %s"}`,
 					mode.Perm(), mode, addr, mode.Perm(), addr)
 
 				serversChan <- &ServerListener{Server: s, Listener: listener}
@@ -137,7 +150,6 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 			errChan <- err
 		}
 	}
-
 	it(func(s Server) bool {
 		l := s.(*ServerListener)
 
@@ -146,11 +158,12 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 
 			addr := l.Addr()
 
-			fnLog(log.Info, "%s HTTP server starting on %s", runLogPrefix(l), addr)
+			fnLog(xlog.Info, "%s HTTP server starting on %s", runLogPrefix(l), addr)
 
 			server := &http.Server{
-				Addr:    addr,
-				Handler: fnNewHandler(l.Server),
+				Addr:     addr,
+				Handler:  fnNewHandler(l.Server),
+				ErrorLog: log.New(&fnLogHTTPError{&cfg.fnLogHTTPError}, "", 0),
 
 				// see: Potential slowloris attack GO-S2112
 				ReadHeaderTimeout: s.Base().HTTP.ReadHeaderTimeout,
@@ -163,12 +176,12 @@ func (it iterator) ServeHTTP(fnNewHandler func(Server) http.Handler, fnArgs ...A
 				defer cancel()
 
 				if err := server.Shutdown(ctxTimeout); err != nil {
-					fnLog(log.Info, "server (:addr %s) shutdown failed: %s", addr, err)
+					fnLog(xlog.Info, "server (:addr %s) shutdown failed: %s", addr, err)
 
 					return
 				}
 
-				fnLog(log.Info, "%s HTTP server (:addr %s) shutdown OK", runLogPrefix(l), addr)
+				fnLog(xlog.Info, "%s HTTP server (:addr %s) shutdown OK", runLogPrefix(l), addr)
 			}()
 
 			if s.Kind().Has(KindUNIX) {
@@ -275,7 +288,7 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 
 			var opts []grpc.ServerOption
 
-			fnLog(log.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
+			fnLog(xlog.Info, "%s gRPC server starting on %s", runLogPrefix(l), addr)
 
 			tlsConfig, err := inet.newTLSConfig()
 			if err != nil {
@@ -298,7 +311,7 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 				<-ctx.Done()
 
 				server.GracefulStop()
-				fnLog(log.Info, "%s gRPC server (:addr %s) shutdown OK", runLogPrefix(l), addr)
+				fnLog(xlog.Info, "%s gRPC server (:addr %s) shutdown OK", runLogPrefix(l), addr)
 			}()
 
 			if err := server.Serve(l.Listener); err != nil {
