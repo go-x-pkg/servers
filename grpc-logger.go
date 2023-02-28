@@ -98,6 +98,6 @@ func (l xGRPCLoggerV2) V(level int) bool {
 	return l.levelMin == l.xLogLevel(level)
 }
 
-func newXGRPCLogger(l logGRPC) xGRPCLoggerV2 {
+func newXGRPCLoggerV2(l logGRPC) xGRPCLoggerV2 {
 	return xGRPCLoggerV2{l}
 }

@@ -302,7 +302,7 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 				opts = append(opts, opt)
 			}
 
-			grpclog.SetLoggerV2(newXGRPCLogger(cfg.logGRPC))
+			grpclog.SetLoggerV2(newXGRPCLoggerV2(cfg.logGRPC))
 
 			server := fnNewServer(l.Server, opts...)
 
