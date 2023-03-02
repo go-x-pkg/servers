@@ -54,7 +54,7 @@ func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), c.Enable)
 		fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType.orDefault())
-		fmt.Fprintf(w, "%scaCertFile: %q\n", ctx.Indent(), c.CACertFile)
+		fmt.Fprintf(w, "%scaCertFile: %s\n", ctx.Indent(), c.CACertFile)
 		fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
 	})
 }
