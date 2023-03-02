@@ -79,9 +79,9 @@ func (s *ServerINET) newTLSConfig() (*tls.Config, error) {
 	if s.ClientAuth.TLS.Enable {
 		tlsConfig.ClientAuth = s.ClientAuth.TLS.AuthType.orDefault().CryptoTLSClientAuthType()
 
-		if s.ClientAuth.TLS.TrustedCA != "" {
+		if s.ClientAuth.TLS.CACertFile != "" {
 			caCertPool, err := loadCACertPool(
-				s.ClientAuth.TLS.TrustedCA)
+				s.ClientAuth.TLS.CACertFile)
 			if err != nil {
 				return nil, err
 			}
@@ -100,7 +100,7 @@ func (s *ServerINET) interpolate(interpolateFn func(string) string) {
 
 	s.TLS.CertFile = interpolateFn(s.TLS.CertFile)
 	s.TLS.KeyFile = interpolateFn(s.TLS.KeyFile)
-	s.ClientAuth.TLS.TrustedCA = interpolateFn(s.ClientAuth.TLS.TrustedCA)
+	s.ClientAuth.TLS.CACertFile = interpolateFn(s.ClientAuth.TLS.CACertFile)
 }
 
 func (s *ServerINET) validate() error {
@@ -185,13 +185,13 @@ func (s *ServerINET) Dump(ctx *dumpctx.Ctx, w io.Writer) {
 func loadCACertPool(caCertPath string) (*x509.CertPool, error) {
 	caCert, err := os.ReadFile(caCertPath)
 	if err != nil {
-		return nil, fmt.Errorf("error read TrustedCA (:cert %q): %w",
+		return nil, fmt.Errorf("error read CACertFile (:cert %q): %w",
 			caCertPath, err)
 	}
 
 	caCertPool := x509.NewCertPool()
 	if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
-		return nil, fmt.Errorf("(:cert %q): %w", caCertPath, ErrLoadTrustedCA)
+		return nil, fmt.Errorf("(:cert %q): %w", caCertPath, ErrLoadCACertFile)
 	}
 
 	return caCertPool, nil
