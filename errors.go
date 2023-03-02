@@ -16,7 +16,7 @@ var (
 
 	ErrGotBothInetAndUnix = errors.New("provided server is both unix and inet")
 
-	ErrLoadTrustedCA = errors.New("error load trusted CA")
+	ErrLoadCACertFile = errors.New("error load trusted CA")
 
 	ErrUnknownVersionTLS = errors.New("unknown version TLS")
 

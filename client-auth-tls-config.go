@@ -37,7 +37,7 @@ type ClientAuthTLSConfig struct {
 	// If ClientAuthTLS is set true, AuthType must be set.
 	AuthType clientAuthTypeTLS `json:"authType" yaml:"authType" bson:"authType"`
 	// CARoot certificate for clients certificates. Optional.
-	TrustedCA string `json:"caCert" yaml:"caCert" bson:"caCert"`
+	CACertFile string `json:"caCertFile" yaml:"caCertFile" bson:"caCertFile"`
 	// If set, server will verifie Common Name of certificate given by client has in this list.
 	// Otherwise server return Unauthtorized response.
 	ClientCommonNames []string `json:"clientCommonNames" yaml:"clientCommonNames" bson:"clientCommonNames"`
@@ -54,7 +54,7 @@ func (c *ClientAuthTLSConfig) dump(ctx *dumpctx.Ctx, w io.Writer) {
 	ctx.Wrap(func() {
 		fmt.Fprintf(w, "%senable: %t\n", ctx.Indent(), c.Enable)
 		fmt.Fprintf(w, "%sauthType: %s\n", ctx.Indent(), c.AuthType.orDefault())
-		fmt.Fprintf(w, "%scaCertFile: %q\n", ctx.Indent(), c.TrustedCA)
+		fmt.Fprintf(w, "%scaCertFile: %q\n", ctx.Indent(), c.CACertFile)
 		fmt.Fprintf(w, "%sclientCommonNames: %s\n", ctx.Indent(), c.ClientCommonNames)
 	})
 }

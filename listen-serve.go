@@ -17,7 +17,6 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -301,8 +300,6 @@ func (it iterator) ServeGRPC(fnNewServer func(s Server, opts ...grpc.ServerOptio
 				opt := grpc.Creds(credentials.NewTLS(tlsConfig))
 				opts = append(opts, opt)
 			}
-
-			grpclog.SetLoggerV2(newXGRPCLoggerV2(cfg.logGRPC))
 
 			server := fnNewServer(l.Server, opts...)
 
