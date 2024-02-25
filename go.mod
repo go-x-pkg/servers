@@ -7,14 +7,17 @@ require (
 	github.com/go-x-pkg/fnspath v0.0.1
 	github.com/go-x-pkg/isnil v0.0.1
 	github.com/go-x-pkg/log v0.0.6
+	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.53.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 // indirect
 	github.com/go-x-pkg/bufpool v0.0.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.6.0 // indirect
